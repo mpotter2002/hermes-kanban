@@ -10,6 +10,7 @@ import { type DiffLineComment, DiffViewerPanel } from "@/components/detail-panel
 import { FileTreePanel } from "@/components/detail-panels/file-tree-panel";
 import { ResizableBottomPane } from "@/components/resizable-bottom-pane";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/components/ui/cn";
 import type { ClineChatActionResult } from "@/hooks/use-cline-chat-runtime-actions";
 import type { ClineChatMessage } from "@/hooks/use-cline-chat-session";
 import { isNativeClineAgentSelected } from "@/runtime/native-agent";
@@ -524,6 +525,7 @@ export function CardDetailView({
 
 	return (
 		<div
+			className="w-full"
 			style={{
 				display: "flex",
 				flex: "1 1 0",
@@ -533,33 +535,38 @@ export function CardDetailView({
 			}}
 		>
 			{!isDiffExpanded ? (
-				<ColumnContextPanel
-					selection={selection}
-					workspacePath={workspacePath}
-					onCardSelect={onCardSelect}
-					taskSessions={taskSessions}
-					onTaskDragEnd={onTaskDragEnd}
-					onCreateTask={onCreateTask}
-					onStartTask={onStartTask}
-					onStartAllTasks={onStartAllTasks}
-					onClearTrash={onClearTrash}
-					editingTaskId={editingTaskId}
-					inlineTaskEditor={inlineTaskEditor}
-					onEditTask={onEditTask}
-					onCommitTask={onCommitTask}
-					onOpenPrTask={onOpenPrTask}
-					onMoveToTrashTask={onMoveReviewCardToTrash}
-					onRestoreFromTrashTask={onRestoreTaskFromTrash}
-					commitTaskLoadingById={commitTaskLoadingById}
-					openPrTaskLoadingById={openPrTaskLoadingById}
-					moveToTrashLoadingById={moveToTrashLoadingById}
-				/>
+				<div className="hidden min-h-0 md:flex">
+					<ColumnContextPanel
+						selection={selection}
+						workspacePath={workspacePath}
+						onCardSelect={onCardSelect}
+						taskSessions={taskSessions}
+						onTaskDragEnd={onTaskDragEnd}
+						onCreateTask={onCreateTask}
+						onStartTask={onStartTask}
+						onStartAllTasks={onStartAllTasks}
+						onClearTrash={onClearTrash}
+						editingTaskId={editingTaskId}
+						inlineTaskEditor={inlineTaskEditor}
+						onEditTask={onEditTask}
+						onCommitTask={onCommitTask}
+						onOpenPrTask={onOpenPrTask}
+						onMoveToTrashTask={onMoveReviewCardToTrash}
+						onRestoreFromTrashTask={onRestoreTaskFromTrash}
+						commitTaskLoadingById={commitTaskLoadingById}
+						openPrTaskLoadingById={openPrTaskLoadingById}
+						moveToTrashLoadingById={moveToTrashLoadingById}
+					/>
+				</div>
 			) : null}
 			<div
+				className={cn(
+					"flex min-h-0 min-w-0 flex-col overflow-hidden w-full",
+					!isDiffExpanded && "md:w-[80%]",
+				)}
 				style={{
 					display: "flex",
 					flexDirection: "column",
-					width: isDiffExpanded ? "100%" : "80%",
 					minWidth: 0,
 					minHeight: 0,
 					overflow: "hidden",

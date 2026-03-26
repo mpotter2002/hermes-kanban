@@ -2,6 +2,7 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { type ReactNode, useCallback, useRef, useState } from "react";
 
+import InfraStatusPanel from "@/components/infra-status-panel";
 import { Button } from "@/components/ui/button";
 import { ClineIcon } from "@/components/ui/cline-icon";
 import { cn } from "@/components/ui/cn";
@@ -75,8 +76,8 @@ export function ProjectNavigationPanel({
 	isLoadingProjects?: boolean;
 	currentProjectId: string | null;
 	removingProjectId: string | null;
-	activeSection: "projects" | "agent";
-	onActiveSectionChange: (section: "projects" | "agent") => void;
+	activeSection: "projects" | "agent" | "infrastructure";
+	onActiveSectionChange: (section: "projects" | "agent" | "infrastructure") => void;
 	canShowAgentSection: boolean;
 	agentSectionContent?: ReactNode;
 	onSelectProject: (projectId: string) => void;
@@ -162,7 +163,7 @@ export function ProjectNavigationPanel({
 
 	return (
 		<aside
-			className="relative flex flex-col min-h-0 overflow-hidden bg-surface-1"
+			className="relative flex min-h-0 flex-col overflow-hidden bg-surface-1"
 			style={{
 				width,
 				minWidth: SIDEBAR_MIN_WIDTH,
@@ -185,7 +186,7 @@ export function ProjectNavigationPanel({
 					</div>
 				</div>
 				<div className="mt-2 rounded-md bg-surface-2 p-1">
-					<div className="grid grid-cols-2 gap-1">
+					<div className="grid grid-cols-3 gap-1">
 						<button
 							type="button"
 							onClick={() => onActiveSectionChange("projects")}
@@ -197,6 +198,18 @@ export function ProjectNavigationPanel({
 							)}
 						>
 							Projects
+						</button>
+						<button
+							type="button"
+							onClick={() => onActiveSectionChange("infrastructure")}
+							className={cn(
+								"cursor-pointer rounded-sm px-2 py-1 text-xs font-medium",
+								activeSection === "infrastructure"
+									? "bg-surface-4 text-text-primary"
+									: "text-text-secondary hover:text-text-primary",
+							)}
+						>
+							Infra
 						</button>
 						<button
 							type="button"
@@ -218,6 +231,10 @@ export function ProjectNavigationPanel({
 					<p className="text-text-tertiary text-xs" style={{ padding: "8px 4px 0" }}>
 						Add tasks, link dependencies, break work down, and manage your board. Try asking to
 						create and link some tasks to get started.
+					</p>
+				) : activeSection === "infrastructure" ? (
+					<p className="text-text-tertiary text-xs" style={{ padding: "8px 4px 0" }}>
+						Local Hermes runtime health and network connectivity.
 					</p>
 				) : null}
 			</div>
@@ -268,7 +285,7 @@ export function ProjectNavigationPanel({
 					</div>
 					<ShortcutsCard />
 				</>
-			) : (
+			) : activeSection === "agent" ? (
 				<div className="flex flex-1 min-h-0 flex-col">
 					<div className="flex flex-1 min-h-0 overflow-hidden bg-surface-1 px-2 pb-2 pt-1">
 						{agentSectionContent ?? (
@@ -277,6 +294,10 @@ export function ProjectNavigationPanel({
 							</div>
 						)}
 					</div>
+				</div>
+			) : (
+				<div className="flex min-h-0 flex-1 flex-col overflow-hidden px-2 pb-2 pt-1">
+					<InfraStatusPanel />
 				</div>
 			)}
 			<AlertDialog

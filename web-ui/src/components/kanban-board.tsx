@@ -372,7 +372,7 @@ export function KanbanBoard({
 		>
 			<section
 				ref={boardRef}
-				className="kb-board kb-dependency-surface"
+				className="kb-board kb-dependency-surface overflow-x-auto md:overflow-x-hidden"
 				data-programmatic-card-move={programmaticCardMoveInFlight ? "true" : undefined}
 			>
 				{data.columns.map((column) => (

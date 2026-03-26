@@ -9,6 +9,7 @@ import {
 	CircleArrowDown,
 	Command,
 	GitBranch,
+	Menu,
 	Play,
 	Plus,
 	Settings,
@@ -278,6 +279,7 @@ function TopBarGitStatusSection({
 
 export function TopBar({
 	onBack,
+	onToggleSidebar,
 	workspacePath,
 	isWorkspacePathLoading = false,
 	workspaceHint,
@@ -312,6 +314,7 @@ export function TopBar({
 	hideProjectDependentActions = false,
 }: {
 	onBack?: () => void;
+	onToggleSidebar?: () => void;
 	workspacePath?: string;
 	isWorkspacePathLoading?: boolean;
 	workspaceHint?: string;
@@ -414,6 +417,18 @@ export function TopBar({
 							icon={<ArrowLeft size={16} />}
 							onClick={onBack}
 							aria-label="Back to board"
+							className="mr-1 shrink-0"
+						/>
+					</div>
+				) : null}
+				{onToggleSidebar ? (
+					<div className="flex items-center shrink-0 overflow-visible md:hidden">
+						<Button
+							variant="ghost"
+							size="sm"
+							icon={<Menu size={16} />}
+							onClick={onToggleSidebar}
+							aria-label="Toggle sidebar"
 							className="mr-1 shrink-0"
 						/>
 					</div>

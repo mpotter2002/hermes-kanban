@@ -1,7 +1,7 @@
 // Main React composition root for the browser app.
 // Keep this file focused on wiring top-level hooks and surfaces together, and
 // push runtime-specific orchestration down into hooks and service modules.
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, X } from "lucide-react";
 import type { ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -11,6 +11,7 @@ import { ClearTrashDialog } from "@/components/clear-trash-dialog";
 import { DebugDialog } from "@/components/debug-dialog";
 import { AgentTerminalPanel } from "@/components/detail-panels/agent-terminal-panel";
 import { GitHistoryView } from "@/components/git-history-view";
+import HermesChatWidget from "@/components/hermes-chat-widget";
 import { KanbanBoard } from "@/components/kanban-board";
 import { ProjectNavigationPanel } from "@/components/project-navigation-panel";
 import { ResizableBottomPane } from "@/components/resizable-bottom-pane";
@@ -83,9 +84,10 @@ export default function App(): ReactElement {
 	const [canPersistWorkspaceState, setCanPersistWorkspaceState] = useState(false);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [settingsInitialSection, setSettingsInitialSection] = useState<RuntimeSettingsSection | null>(null);
-	const [homeSidebarSection, setHomeSidebarSection] = useState<"projects" | "agent">("projects");
+	const [homeSidebarSection, setHomeSidebarSection] = useState<"projects" | "agent" | "infrastructure">("projects");
 	const [isClearTrashDialogOpen, setIsClearTrashDialogOpen] = useState(false);
 	const [isGitHistoryOpen, setIsGitHistoryOpen] = useState(false);
+	const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 	const [pendingTaskStartAfterEditId, setPendingTaskStartAfterEditId] = useState<string | null>(null);
 	const taskEditorResetRef = useRef<() => void>(() => {});
 	const lastStreamErrorRef = useRef<string | null>(null);
@@ -541,6 +543,12 @@ export default function App(): ReactElement {
 		setIsGitHistoryOpen(false);
 	}, []);
 
+	useEffect(() => {
+		if (selectedCard) {
+			setIsMobileSidebarOpen(false);
+		}
+	}, [selectedCard]);
+
 	const handleOpenSettings = useCallback((section?: RuntimeSettingsSection) => {
 		setSettingsInitialSection(section ?? null);
 		setIsSettingsOpen(true);
@@ -748,27 +756,70 @@ export default function App(): ReactElement {
 	return (
 		<div className="flex h-[100svh] min-w-0 overflow-hidden">
 			{!selectedCard ? (
-				<ProjectNavigationPanel
-					projects={displayedProjects}
-					isLoadingProjects={isProjectListLoading}
-					currentProjectId={navigationCurrentProjectId}
-					removingProjectId={removingProjectId}
-					activeSection={homeSidebarSection}
-					onActiveSectionChange={setHomeSidebarSection}
-					canShowAgentSection={!hasNoProjects && Boolean(currentProjectId)}
-					agentSectionContent={homeSidebarAgentPanel}
-					onSelectProject={(projectId) => {
-						void handleSelectProject(projectId);
-					}}
-					onRemoveProject={handleRemoveProject}
-					onAddProject={() => {
-						void handleAddProject();
-					}}
-				/>
+				<>
+					<div className="relative z-30 hidden min-h-0 md:flex">
+						<ProjectNavigationPanel
+							projects={displayedProjects}
+							isLoadingProjects={isProjectListLoading}
+							currentProjectId={navigationCurrentProjectId}
+							removingProjectId={removingProjectId}
+							activeSection={homeSidebarSection}
+							onActiveSectionChange={setHomeSidebarSection}
+							canShowAgentSection={!hasNoProjects && Boolean(currentProjectId)}
+							agentSectionContent={homeSidebarAgentPanel}
+							onSelectProject={(projectId) => {
+								void handleSelectProject(projectId);
+							}}
+							onRemoveProject={handleRemoveProject}
+							onAddProject={() => {
+								void handleAddProject();
+							}}
+						/>
+					</div>
+					{isMobileSidebarOpen ? (
+						<div className="absolute inset-0 z-40 flex md:hidden">
+							<button
+								type="button"
+								className="flex-1 bg-black/50"
+								onClick={() => setIsMobileSidebarOpen(false)}
+								aria-label="Close sidebar overlay"
+							/>
+							<div className="relative flex h-full min-h-0 w-[min(22rem,88vw)] shrink-0">
+								<ProjectNavigationPanel
+									projects={displayedProjects}
+									isLoadingProjects={isProjectListLoading}
+									currentProjectId={navigationCurrentProjectId}
+									removingProjectId={removingProjectId}
+									activeSection={homeSidebarSection}
+									onActiveSectionChange={setHomeSidebarSection}
+									canShowAgentSection={!hasNoProjects && Boolean(currentProjectId)}
+									agentSectionContent={homeSidebarAgentPanel}
+									onSelectProject={(projectId) => {
+										setIsMobileSidebarOpen(false);
+										void handleSelectProject(projectId);
+									}}
+									onRemoveProject={handleRemoveProject}
+									onAddProject={() => {
+										void handleAddProject();
+									}}
+								/>
+								<Button
+									variant="ghost"
+									size="sm"
+									icon={<X size={16} />}
+									onClick={() => setIsMobileSidebarOpen(false)}
+									className="absolute right-2 top-2 md:hidden"
+									aria-label="Close sidebar"
+								/>
+							</div>
+						</div>
+					) : null}
+				</>
 			) : null}
 			<div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 				<TopBar
 					onBack={selectedCard ? handleBack : undefined}
+					onToggleSidebar={!selectedCard ? () => setIsMobileSidebarOpen((current) => !current) : undefined}
 					workspacePath={navbarWorkspacePath}
 					isWorkspacePathLoading={shouldShowProjectLoadingState}
 					workspaceHint={navbarWorkspaceHint}
@@ -852,7 +903,7 @@ export default function App(): ReactElement {
 							</div>
 						) : (
 							<div className="flex flex-1 flex-col min-h-0 min-w-0">
-								<div className="flex flex-1 min-h-0 min-w-0">
+								<div className="flex flex-1 min-h-0 min-w-0 overflow-x-auto md:overflow-x-hidden">
 									{isGitHistoryOpen ? (
 										<GitHistoryView
 											workspaceId={currentProjectId}
@@ -1157,6 +1208,7 @@ export default function App(): ReactElement {
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialog>
+			<HermesChatWidget />
 		</div>
 	);
 }

@@ -86,7 +86,7 @@ export function BoardColumn({
 	return (
 		<section
 			data-column-id={column.id}
-			className="flex flex-col min-w-0 min-h-0 bg-surface-1 rounded-lg overflow-hidden"
+			className="flex min-h-0 min-w-[18rem] flex-col overflow-hidden rounded-lg bg-surface-1 md:min-w-0"
 			style={{
 				flex: "1 1 0",
 			}}
@@ -208,4 +208,3 @@ export function BoardColumn({
 		</section>
 	);
 }
-
