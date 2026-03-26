@@ -47,7 +47,7 @@ const runners: RunnerCard[] = [
 		name: "MiniMax",
 		icon: <Wrench className="h-4 w-4" />,
 		color: "bg-blue-500",
-		role: "Utility",
+		role: "Utility (Coming Soon)",
 		phase: "Phase 2",
 		useFor: ["Quick patches", "Cleanup", "Fallback", "Small fixes"],
 	},

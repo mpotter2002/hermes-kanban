@@ -161,6 +161,19 @@ export default function InfraStatusPanel(): ReactElement {
 				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
 					<div className="mb-2 flex items-center justify-between gap-3">
 						<div>
+							<p className="text-sm font-medium text-text-primary">Kimi Usage</p>
+							<p className="mt-0.5 text-xs text-text-secondary">Kimi K2.5 — Main chat model</p>
+						</div>
+						<StatusDot status="online" />
+					</div>
+					<div className="flex flex-col gap-2.5">
+						<p className="text-xs text-text-secondary">Kimi usage tracking coming soon. Currently used as main Hermes chat model for planning and discussion.</p>
+					</div>
+				</div>
+
+				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
+					<div className="mb-2 flex items-center justify-between gap-3">
+						<div>
 							<p className="text-sm font-medium text-text-primary">Claude Usage</p>
 							<p className="mt-0.5 text-xs text-text-secondary">
 								{data?.claude_usage.model
