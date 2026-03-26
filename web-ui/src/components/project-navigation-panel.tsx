@@ -1,7 +1,8 @@
 import * as Collapsible from "@radix-ui/react-collapsible";
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 
+import FilesExplorerPanel from "@/components/files-explorer-panel";
 import HermesChatPanel from "@/components/hermes-chat-widget";
 import InfraStatusPanel from "@/components/infra-status-panel";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ export function ProjectNavigationPanel({
 	isMobileOverlay = false,
 	activeSection,
 	onActiveSectionChange,
+	onCloseOverlay,
 	onSelectProject,
 	onRemoveProject,
 	onAddProject,
@@ -80,8 +82,9 @@ export function ProjectNavigationPanel({
 	removingProjectId: string | null;
 	isMobile?: boolean;
 	isMobileOverlay?: boolean;
-	activeSection: "projects" | "hermes" | "infrastructure";
-	onActiveSectionChange: (section: "projects" | "hermes" | "infrastructure") => void;
+	activeSection: "projects" | "files" | "hermes" | "infrastructure";
+	onActiveSectionChange: (section: "projects" | "files" | "hermes" | "infrastructure") => void;
+	onCloseOverlay?: () => void;
 	onSelectProject: (projectId: string) => void;
 	onRemoveProject: (projectId: string) => Promise<boolean>;
 	onAddProject: () => void;
@@ -195,14 +198,24 @@ export function ProjectNavigationPanel({
 				className={cn(isMobileOverlay ? "border-b border-border bg-surface-1 px-3 py-3" : null)}
 				style={isMobileOverlay ? undefined : { padding: "12px 12px 8px" }}
 			>
-				<div>
+				<div className="flex items-start justify-between gap-3">
 					<div className="font-semibold text-base flex items-baseline gap-1.5">
 						<ClineIcon size={18} className="text-text-primary shrink-0 self-center" />
 						Cline <span className="text-text-secondary font-normal text-xs">v{__APP_VERSION__}</span>
 					</div>
+					{isMobileOverlay && onCloseOverlay ? (
+						<button
+							type="button"
+							onClick={onCloseOverlay}
+							className="rounded-md border border-border bg-surface-2 p-2 text-text-secondary transition-colors hover:bg-surface-3 hover:text-text-primary"
+							aria-label="Close panel"
+						>
+							<X size={16} />
+						</button>
+					) : null}
 				</div>
 				<div className="mt-2 rounded-md bg-surface-2 p-1">
-					<div className="grid grid-cols-3 gap-1">
+					<div className="grid grid-cols-4 gap-1">
 						<button
 							type="button"
 							onClick={() => onActiveSectionChange("projects")}
@@ -214,6 +227,18 @@ export function ProjectNavigationPanel({
 							)}
 						>
 							Projects
+						</button>
+						<button
+							type="button"
+							onClick={() => onActiveSectionChange("files")}
+							className={cn(
+								"cursor-pointer rounded-sm px-2 py-1 text-xs font-medium",
+								activeSection === "files"
+									? "bg-surface-4 text-text-primary"
+									: "text-text-secondary hover:text-text-primary",
+							)}
+						>
+							Files
 						</button>
 						<button
 							type="button"
@@ -241,11 +266,15 @@ export function ProjectNavigationPanel({
 						</button>
 					</div>
 				</div>
-				{activeSection === "infrastructure" ? (
-					<p className="text-text-tertiary text-xs" style={{ padding: "8px 4px 0" }}>
-						Local Hermes runtime health and network connectivity.
-					</p>
-				) : null}
+				<p className="text-text-tertiary text-xs" style={{ padding: "8px 4px 0" }}>
+					{activeSection === "projects"
+						? "Projects and board shortcuts."
+						: activeSection === "files"
+							? "Browse repo files and preview text content."
+							: activeSection === "infrastructure"
+								? "Local Hermes runtime health and network connectivity."
+								: "Persistent Hermes chat and backlog creation."}
+				</p>
 			</div>
 
 			{activeSection === "projects" ? (
@@ -294,6 +323,10 @@ export function ProjectNavigationPanel({
 					</div>
 					<ShortcutsCard />
 				</>
+			) : activeSection === "files" ? (
+				<div className="flex min-h-0 flex-1 flex-col overflow-hidden px-2 pb-2 pt-1">
+					<FilesExplorerPanel workspaceId={currentProjectId} />
+				</div>
 			) : activeSection === "hermes" ? (
 				<div className="flex flex-1 min-h-0 flex-col">
 					<div

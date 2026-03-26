@@ -6,8 +6,11 @@ import type {
 	RuntimeGitSummaryResponse,
 	RuntimeGitSyncAction,
 	RuntimeGitSyncResponse,
+	RuntimeWorkspaceFileContentRequest,
+	RuntimeWorkspaceFileContentResponse,
 	RuntimeTaskSessionSummary,
 	RuntimeWorkspaceChangesMode,
+	RuntimeWorkspaceFileTreeResponse,
 	RuntimeWorkspaceFileSearchResponse,
 	RuntimeWorkspaceStateResponse,
 } from "../core/api-contract.js";
@@ -28,6 +31,7 @@ import {
 import { getCommitDiff, getGitLog, getGitRefs } from "../workspace/git-history.js";
 import { discardGitChanges, getGitSyncSummary, runGitCheckoutAction, runGitSyncAction } from "../workspace/git-sync.js";
 import { searchWorkspaceFiles } from "../workspace/search-workspace-files.js";
+import { loadWorkspaceFileContent, loadWorkspaceFileTree } from "../workspace/browse-workspace-files.js";
 import {
 	deleteTaskWorktree,
 	ensureTaskWorktreeIfDoesntExist,
@@ -335,6 +339,12 @@ export function createWorkspaceApi(deps: CreateWorkspaceApiDependencies): Runtim
 				query,
 				files,
 			} satisfies RuntimeWorkspaceFileSearchResponse;
+		},
+		loadFileTree: async (workspaceScope) => {
+			return await loadWorkspaceFileTree(workspaceScope.workspacePath);
+		},
+		loadFileContent: async (workspaceScope, input) => {
+			return await loadWorkspaceFileContent(workspaceScope.workspacePath, input.path);
 		},
 		loadState: async (workspaceScope) => {
 			return await deps.buildWorkspaceStateSnapshot(workspaceScope.workspaceId, workspaceScope.workspacePath);

@@ -27,6 +27,7 @@ import { createProjectsApi } from "../trpc/projects-api.js";
 import { createRuntimeApi } from "../trpc/runtime-api.js";
 import { createWorkspaceApi } from "../trpc/workspace-api.js";
 import { getWebUiDir, normalizeRequestPath, readAsset } from "./assets.js";
+import { readClaudeUsageSnapshot } from "./claude-usage.js";
 import type { RuntimeStateHub } from "./runtime-state-hub.js";
 import type { WorkspaceRegistry } from "./workspace-registry.js";
 
@@ -58,6 +59,107 @@ export interface CreateRuntimeServerDependencies {
 export interface RuntimeServer {
 	url: string;
 	close: () => Promise<void>;
+}
+
+function getAgentSessionCounts(): Record<string, number> {
+	try {
+		const stateDir = join(homedir(), ".cline", "kanban", "workspaces");
+		const workspaces = readdirSync(stateDir, { withFileTypes: true })
+			.filter((entry) => entry.isDirectory())
+			.map((entry) => entry.name);
+		const counts: Record<string, number> = {};
+		for (const workspaceName of workspaces) {
+			try {
+				const sessionsPath = join(stateDir, workspaceName, "sessions.json");
+				const raw = readFileSync(sessionsPath, "utf8");
+				const sessions = JSON.parse(raw) as Record<string, { agentId?: string; state?: string }>;
+				for (const session of Object.values(sessions)) {
+					if (session.state === "running" && session.agentId) {
+						counts[session.agentId] = (counts[session.agentId] ?? 0) + 1;
+					}
+				}
+			} catch {
+				// Skip unreadable workspace session files.
+			}
+		}
+		return counts;
+	} catch {
+		return {};
+	}
+}
+
+async function checkUrl(url: string): Promise<boolean> {
+	try {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 3_000);
+		await fetch(url, { signal: controller.signal });
+		clearTimeout(timeout);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function getSystemStats(): {
+	claude_running: boolean;
+	codex_running: boolean;
+	cpu: number;
+	mem_used_gb: number;
+	mem_total_gb: number;
+	disk_used_gb: number;
+	disk_total_gb: number;
+} {
+	const getProcessRunning = (processName: "claude" | "codex"): boolean => {
+		try {
+			return (
+				execSync(`pgrep -x ${processName} > /dev/null 2>&1 && echo running || echo stopped`, {
+					timeout: 1_000,
+				})
+					.toString()
+					.trim() === "running"
+			);
+		} catch {
+			return false;
+		}
+	};
+
+	try {
+		const totalMem = totalmem();
+		const freeMem = freemem();
+		const usedMem = totalMem - freeMem;
+		let diskUsed = 0;
+		let diskTotal = 0;
+		try {
+			const dfOutput = execSync("df -k / | tail -1", { timeout: 2_000 }).toString().trim();
+			const parts = dfOutput.split(/\s+/);
+			diskTotal = Number.parseInt(parts[1] ?? "0", 10) / 1024 / 1024;
+			diskUsed = Number.parseInt(parts[2] ?? "0", 10) / 1024 / 1024;
+		} catch {
+			// Ignore disk probe failures and report zeros.
+		}
+		const load = loadavg()[0] ?? 0;
+		const cpuCount = cpus().length;
+		const cpuPct = Math.min(100, (load / cpuCount) * 100);
+		return {
+			claude_running: getProcessRunning("claude"),
+			codex_running: getProcessRunning("codex"),
+			cpu: Math.round(cpuPct * 10) / 10,
+			mem_used_gb: Math.round((usedMem / 1024 / 1024 / 1024) * 100) / 100,
+			mem_total_gb: Math.round((totalMem / 1024 / 1024 / 1024) * 100) / 100,
+			disk_used_gb: Math.round(diskUsed * 100) / 100,
+			disk_total_gb: Math.round(diskTotal * 100) / 100,
+		};
+	} catch {
+		return {
+			claude_running: false,
+			codex_running: false,
+			cpu: 0,
+			mem_used_gb: 0,
+			mem_total_gb: 0,
+			disk_used_gb: 0,
+			disk_total_gb: 0,
+		};
+	}
 }
 
 function readWorkspaceIdFromRequest(request: IncomingMessage, requestUrl: URL): string | null {
@@ -246,97 +348,11 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 			}
 			if (pathname === "/api/infra-status") {
 				res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" });
-				// Count active sessions per agent from workspace state files
-				const getAgentSessionCounts = (): Record<string, number> => {
-					try {
-						const stateDir = join(homedir(), ".cline", "kanban", "workspaces");
-						const workspaces = readdirSync(stateDir, { withFileTypes: true })
-							.filter((d) => d.isDirectory())
-							.map((d) => d.name);
-						const counts: Record<string, number> = {};
-						for (const ws of workspaces) {
-							try {
-								const sessionsPath = join(stateDir, ws, "sessions.json");
-								const raw = readFileSync(sessionsPath, "utf-8");
-								const sessions = JSON.parse(raw) as Record<string, { agentId?: string; state?: string }>;
-								for (const session of Object.values(sessions)) {
-									if (session.state === "running" && session.agentId) {
-										counts[session.agentId] = (counts[session.agentId] ?? 0) + 1;
-									}
-								}
-							} catch { /* skip */ }
-						}
-						return counts;
-					} catch {
-						return {};
-					}
-				};
-				const checkUrl = async (url: string): Promise<boolean> => {
-					try {
-						const controller = new AbortController();
-						const timeout = setTimeout(() => controller.abort(), 3000);
-						await fetch(url, { signal: controller.signal });
-						clearTimeout(timeout);
-						return true;
-					} catch {
-						return false;
-					}
-				};
-				// Read real system stats
-				const getSystemStats = () => {
-					const getProcessRunning = (processName: "claude" | "codex"): boolean => {
-						try {
-							return (
-								execSync(`pgrep -x ${processName} > /dev/null 2>&1 && echo running || echo stopped`, {
-									timeout: 1000,
-								})
-									.toString()
-									.trim() === "running"
-							);
-						} catch {
-							return false;
-						}
-					};
-					try {
-						const totalMem = totalmem();
-						const freeMem = freemem();
-						const usedMem = totalMem - freeMem;
-						let diskUsed = 0;
-						let diskTotal = 0;
-						try {
-							const dfOutput = execSync("df -k / | tail -1", { timeout: 2000 }).toString().trim();
-							const parts = dfOutput.split(/\s+/);
-							diskTotal = parseInt(parts[1] ?? "0") / 1024 / 1024;
-							diskUsed = parseInt(parts[2] ?? "0") / 1024 / 1024;
-						} catch { /* ignore */ }
-						const load = loadavg()[0] ?? 0;
-						const cpuCount = cpus().length;
-						const cpuPct = Math.min(100, (load / cpuCount) * 100);
-						return {
-							claude_running: getProcessRunning("claude"),
-							codex_running: getProcessRunning("codex"),
-							cpu: Math.round(cpuPct * 10) / 10,
-							mem_used_gb: Math.round((usedMem / 1024 / 1024 / 1024) * 100) / 100,
-							mem_total_gb: Math.round((totalMem / 1024 / 1024 / 1024) * 100) / 100,
-							disk_used_gb: Math.round(diskUsed * 100) / 100,
-							disk_total_gb: Math.round(diskTotal * 100) / 100,
-						};
-					} catch {
-						return {
-							claude_running: false,
-							codex_running: false,
-							cpu: 0,
-							mem_used_gb: 0,
-							mem_total_gb: 0,
-							disk_used_gb: 0,
-							disk_total_gb: 0,
-						};
-					}
-				};
-				const [gateway, dashboard, sysStats] = await Promise.all([
+				const [gateway, dashboard, sysStats, claudeUsage] = await Promise.all([
 					checkUrl("http://localhost:18789/health"),
 					checkUrl("http://localhost:3001"),
 					Promise.resolve(getSystemStats()),
+					readClaudeUsageSnapshot(),
 				]);
 				const agentSessions = getAgentSessionCounts();
 				res.end(JSON.stringify({
@@ -344,6 +360,7 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 					...sysStats,
 					claude_sessions: agentSessions["claude"] ?? 0,
 					codex_sessions: agentSessions["codex"] ?? 0,
+					claude_usage: claudeUsage,
 				}));
 				return;
 			}

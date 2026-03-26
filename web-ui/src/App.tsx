@@ -1,7 +1,7 @@
 // Main React composition root for the browser app.
 // Keep this file focused on wiring top-level hooks and surfaces together, and
 // push runtime-specific orchestration down into hooks and service modules.
-import { Bot, FolderOpen, Server } from "lucide-react";
+import { Bot, FileCode2, FolderOpen, Server } from "lucide-react";
 import type { ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -75,7 +75,7 @@ import {
 import { TERMINAL_THEME_COLORS } from "@/terminal/theme-colors";
 import type { BoardData } from "@/types";
 
-type HomeSidebarSection = "projects" | "hermes" | "infrastructure";
+type HomeSidebarSection = "projects" | "files" | "hermes" | "infrastructure";
 
 export default function App(): ReactElement {
 	const [board, setBoard] = useState<BoardData>(() => createInitialBoardData());
@@ -805,6 +805,7 @@ export default function App(): ReactElement {
 									isMobileOverlay
 									activeSection={homeSidebarSection}
 									onActiveSectionChange={handleSelectHomeSidebarSection}
+									onCloseOverlay={() => setIsMobileSidebarOpen(false)}
 									onSelectProject={(projectId) => {
 										setIsMobileSidebarOpen(false);
 										void handleSelectProject(projectId);
@@ -823,7 +824,6 @@ export default function App(): ReactElement {
 			<div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 				<TopBar
 					onBack={selectedCard ? handleBack : undefined}
-					onToggleSidebar={!selectedCard ? () => setIsMobileSidebarOpen((current) => !current) : undefined}
 					onActiveSectionChange={handleSelectHomeSidebarSection}
 					workspacePath={navbarWorkspacePath}
 					isWorkspacePathLoading={shouldShowProjectLoadingState}
@@ -907,7 +907,7 @@ export default function App(): ReactElement {
 								</div>
 							</div>
 						) : (
-							<div className="flex min-h-0 min-w-0 flex-1 flex-col pb-16 md:pb-0">
+							<div className="flex min-h-0 min-w-0 flex-1 flex-col pb-[calc(env(safe-area-inset-bottom)+3.75rem)] md:pb-0">
 								<div className="flex flex-1 min-h-0 min-w-0 overflow-x-auto md:overflow-x-hidden">
 									{isGitHistoryOpen ? (
 										<GitHistoryView
@@ -976,7 +976,7 @@ export default function App(): ReactElement {
 												showSessionToolbar={false}
 												autoFocus
 												onClose={closeHomeTerminal}
-												minimalHeaderTitle="Terminal"
+												minimalHeaderTitle="VM Terminal"
 												minimalHeaderSubtitle={homeTerminalSubtitle}
 												panelBackgroundColor={TERMINAL_THEME_COLORS.surfaceRaised}
 												terminalBackgroundColor={TERMINAL_THEME_COLORS.surfaceRaised}
@@ -1068,12 +1068,18 @@ export default function App(): ReactElement {
 			</div>
 			{!selectedCard ? (
 				<div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-1/95 px-2 py-2 backdrop-blur md:hidden">
-					<div className="grid grid-cols-3 gap-2">
+					<div className="grid grid-cols-4 gap-2">
 						<MobileNavButton
 							label="Projects"
 							icon={<FolderOpen size={14} />}
 							isActive={homeSidebarSection === "projects"}
 							onClick={() => handleOpenMobileSection("projects")}
+						/>
+						<MobileNavButton
+							label="Files"
+							icon={<FileCode2 size={14} />}
+							isActive={homeSidebarSection === "files"}
+							onClick={() => handleOpenMobileSection("files")}
 						/>
 						<MobileNavButton
 							label="Infra"

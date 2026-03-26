@@ -199,3 +199,8 @@ export async function searchWorkspaceFiles(
 		changed: entry.changed,
 	}));
 }
+
+export async function listWorkspaceFiles(cwd: string): Promise<string[]> {
+	const { files } = await loadFileIndex(cwd);
+	return files;
+}

@@ -58,6 +58,27 @@ export const runtimeWorkspaceFileSearchResponseSchema = z.object({
 });
 export type RuntimeWorkspaceFileSearchResponse = z.infer<typeof runtimeWorkspaceFileSearchResponseSchema>;
 
+export const runtimeWorkspaceFileTreeResponseSchema = z.object({
+	files: z.array(z.string()),
+});
+export type RuntimeWorkspaceFileTreeResponse = z.infer<typeof runtimeWorkspaceFileTreeResponseSchema>;
+
+export const runtimeWorkspaceFileContentRequestSchema = z.object({
+	path: z.string(),
+});
+export type RuntimeWorkspaceFileContentRequest = z.infer<typeof runtimeWorkspaceFileContentRequestSchema>;
+
+export const runtimeWorkspaceFileContentKindSchema = z.enum(["text", "binary", "too_large", "missing"]);
+export type RuntimeWorkspaceFileContentKind = z.infer<typeof runtimeWorkspaceFileContentKindSchema>;
+
+export const runtimeWorkspaceFileContentResponseSchema = z.object({
+	path: z.string(),
+	kind: runtimeWorkspaceFileContentKindSchema,
+	content: z.string().nullable(),
+	sizeBytes: z.number().int().nonnegative().nullable(),
+});
+export type RuntimeWorkspaceFileContentResponse = z.infer<typeof runtimeWorkspaceFileContentResponseSchema>;
+
 export const runtimeSlashCommandSchema = z.object({
 	name: z.string(),
 	instructions: z.string(),

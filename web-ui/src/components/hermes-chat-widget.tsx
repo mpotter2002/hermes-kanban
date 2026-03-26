@@ -306,7 +306,7 @@ export function HermesChatPanel({
 					isMobile ? "px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2" : "p-3",
 				)}
 			>
-				<div className={cn("flex items-end gap-2", isMobile ? "gap-2.5" : null)}>
+				<div className="relative">
 					<textarea
 						value={draft}
 						onChange={(event) =>
@@ -319,19 +319,19 @@ export function HermesChatPanel({
 						placeholder="Message Hermes or use /task"
 						rows={2}
 						className={cn(
-							"flex-1 resize-none rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none",
+							"w-full resize-none rounded-xl border border-border bg-surface-2 px-3 py-2 pr-14 text-sm text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none",
 							isMobile ? "min-h-16 max-h-36" : "min-h-20",
 						)}
 					/>
 					<Button
 						type="submit"
 						variant="primary"
-						size="md"
+						size="sm"
 						icon={isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
 						disabled={!canSend}
-						className="shrink-0 self-end"
+						className="absolute right-2 bottom-2 h-9 px-3"
 					>
-						Send
+						{isMobile ? null : "Send"}
 					</Button>
 				</div>
 			</form>

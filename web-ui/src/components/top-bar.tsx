@@ -9,7 +9,6 @@ import {
 	CircleArrowDown,
 	Command,
 	GitBranch,
-	Menu,
 	Play,
 	Plus,
 	Settings,
@@ -42,7 +41,7 @@ import { isMacPlatform } from "@/utils/platform";
 
 type SettingsSection = "shortcuts";
 type CreateShortcutResult = { ok: boolean; message?: string };
-type HomeSidebarSection = "projects" | "hermes" | "infrastructure";
+type HomeSidebarSection = "projects" | "files" | "hermes" | "infrastructure";
 
 function getWorkspacePathSegments(path: string): string[] {
 	return path
@@ -369,7 +368,6 @@ function AgentStatusPopover({
 
 export function TopBar({
 	onBack,
-	onToggleSidebar,
 	workspacePath,
 	isWorkspacePathLoading = false,
 	workspaceHint,
@@ -405,7 +403,6 @@ export function TopBar({
 	hideProjectDependentActions = false,
 }: {
 	onBack?: () => void;
-	onToggleSidebar?: () => void;
 	workspacePath?: string;
 	isWorkspacePathLoading?: boolean;
 	workspaceHint?: string;
@@ -511,18 +508,6 @@ export function TopBar({
 						/>
 					</div>
 				) : null}
-				{onToggleSidebar ? (
-					<div className="flex items-center shrink-0 overflow-visible md:hidden">
-						<Button
-							variant="ghost"
-							size="sm"
-							icon={<Menu size={16} />}
-							onClick={onToggleSidebar}
-							aria-label="Toggle sidebar"
-							className="mr-1 shrink-0"
-						/>
-					</div>
-				) : null}
 				{isWorkspacePathLoading ? (
 					<span
 						className="kb-skeleton inline-block"
@@ -550,7 +535,7 @@ export function TopBar({
 					</div>
 				) : null}
 				{displayWorkspacePath && !isWorkspacePathLoading ? (
-					<div className="ml-2 shrink-0">
+					<div className="ml-2 hidden shrink-0 md:block">
 						<OpenWorkspaceButton
 							options={openTargetOptions}
 							selectedOptionId={selectedOpenTargetId}

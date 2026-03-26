@@ -14,6 +14,14 @@ export interface InfraStatusResponse {
 	mem_total_gb: number;
 	disk_used_gb: number;
 	disk_total_gb: number;
+	claude_usage: {
+		model?: string;
+		five_hour_used_percentage?: number;
+		seven_day_used_percentage?: number;
+		five_hour_resets_at?: number;
+		seven_day_resets_at?: number;
+		available: boolean;
+	};
 }
 
 const INFRA_STATUS_POLL_INTERVAL_MS = 10_000;

@@ -29,6 +29,48 @@ function UsageBar({ label, value, max, unit }: { label: string; value: number; m
 	);
 }
 
+function ClaudeUsageBar({
+	label,
+	usedPercentage,
+}: {
+	label: string;
+	usedPercentage: number | undefined;
+}): ReactElement {
+	if (usedPercentage === undefined) {
+		return (
+			<div className="flex flex-col gap-1">
+				<div className="flex justify-between text-xs text-text-secondary">
+					<span>{label}</span>
+					<span>Unknown</span>
+				</div>
+				<div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3" />
+			</div>
+		);
+	}
+
+	return <UsageBar label={label} value={usedPercentage} max={100} unit="%" />;
+}
+
+function formatResetTime(timestampMs: number | undefined): string | null {
+	if (timestampMs === undefined) {
+		return null;
+	}
+	const resetDate = new Date(timestampMs);
+	if (Number.isNaN(resetDate.getTime())) {
+		return null;
+	}
+	const diffMs = resetDate.getTime() - Date.now();
+	const diffMinutes = Math.round(diffMs / 60_000);
+	if (Math.abs(diffMinutes) < 60) {
+		return diffMinutes >= 0 ? `resets in ${diffMinutes}m` : `reset ${Math.abs(diffMinutes)}m ago`;
+	}
+	const diffHours = Math.round(diffMinutes / 60);
+	if (Math.abs(diffHours) < 48) {
+		return diffHours >= 0 ? `resets in ${diffHours}h` : `reset ${Math.abs(diffHours)}h ago`;
+	}
+	return `resets ${resetDate.toLocaleString()}`;
+}
+
 interface ServiceCard {
 	id: string;
 	name: string;
@@ -123,6 +165,51 @@ export default function InfraStatusPanel(): ReactElement {
 						<div className="flex flex-col gap-2.5">
 							<UsageBar label="Claude Code" value={data?.claude_sessions ?? 0} max={Math.max(data?.claude_sessions ?? 0, 4)} unit="sessions" />
 							<UsageBar label="OpenAI Codex" value={data?.codex_sessions ?? 0} max={Math.max(data?.codex_sessions ?? 0, 4)} unit="sessions" />
+						</div>
+					)}
+				</div>
+
+				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
+					<div className="mb-2 flex items-center justify-between gap-3">
+						<div>
+							<p className="text-sm font-medium text-text-primary">Claude Usage</p>
+							<p className="mt-0.5 text-xs text-text-secondary">
+								{data?.claude_usage.model
+									? `${data.claude_usage.model}`
+									: data?.claude_usage.available
+										? "Usage data available"
+										: "Statusline usage data unavailable"}
+							</p>
+						</div>
+						<StatusDot status={data?.claude_usage.available ? "online" : loading ? "checking" : "offline"} />
+					</div>
+					{loading ? (
+						<p className="text-xs text-text-secondary">Loading...</p>
+					) : (
+						<div className="flex flex-col gap-2.5">
+							<ClaudeUsageBar
+								label="5h window"
+								usedPercentage={data?.claude_usage.five_hour_used_percentage}
+							/>
+							{data?.claude_usage.five_hour_resets_at ? (
+								<p className="-mt-1 text-[11px] text-text-tertiary">
+									{formatResetTime(data.claude_usage.five_hour_resets_at)}
+								</p>
+							) : null}
+							<ClaudeUsageBar
+								label="7d window"
+								usedPercentage={data?.claude_usage.seven_day_used_percentage}
+							/>
+							{data?.claude_usage.seven_day_resets_at ? (
+								<p className="-mt-1 text-[11px] text-text-tertiary">
+									{formatResetTime(data.claude_usage.seven_day_resets_at)}
+								</p>
+							) : null}
+							{!data?.claude_usage.available ? (
+								<p className="text-xs text-text-secondary">
+									Enable the repo status line helper to capture live Claude Code usage.
+								</p>
+							) : null}
 						</div>
 					)}
 				</div>

@@ -1,0 +1,6 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "/home/mpotter2002/hermes-kanban/scripts/claude-statusline-cache.sh"
+  }
+}
