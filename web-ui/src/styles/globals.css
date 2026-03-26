@@ -765,3 +765,51 @@ body.kb-dependency-link-mode {
 	margin-top: 0.5em;
 }
 
+@media (max-width: 767px) {
+	html,
+	body,
+	#root {
+		overflow: hidden;
+	}
+
+	.kb-home-layout {
+		padding-bottom: 4rem;
+	}
+
+	.kb-board {
+		overflow-x: auto;
+		overflow-y: hidden;
+		align-items: stretch;
+		padding-bottom: 12px;
+	}
+
+	.kb-navbar-tag {
+		margin-left: 0;
+	}
+
+	.kb-card-detail-view {
+		min-height: 100%;
+	}
+
+	.kb-card-detail-main-row {
+		flex-direction: column !important;
+	}
+
+	.kb-card-detail-agent-pane,
+	.kb-card-detail-diff-pane {
+		width: 100% !important;
+		min-height: 0;
+	}
+
+	.kb-card-detail-agent-pane {
+		flex: 1 1 52% !important;
+	}
+
+	.kb-card-detail-diff-pane {
+		flex: 1 1 48% !important;
+	}
+
+	.kb-card-detail-separator {
+		display: none !important;
+	}
+}

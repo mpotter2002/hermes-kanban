@@ -64,6 +64,7 @@ export function ProjectNavigationPanel({
 	isLoadingProjects = false,
 	currentProjectId,
 	removingProjectId,
+	isMobile = false,
 	activeSection,
 	onActiveSectionChange,
 	canShowAgentSection,
@@ -76,6 +77,7 @@ export function ProjectNavigationPanel({
 	isLoadingProjects?: boolean;
 	currentProjectId: string | null;
 	removingProjectId: string | null;
+	isMobile?: boolean;
 	activeSection: "projects" | "agent" | "infrastructure";
 	onActiveSectionChange: (section: "projects" | "agent" | "infrastructure") => void;
 	canShowAgentSection: boolean;
@@ -163,21 +165,27 @@ export function ProjectNavigationPanel({
 
 	return (
 		<aside
-			className="relative flex min-h-0 flex-col overflow-hidden bg-surface-1"
-			style={{
-				width,
-				minWidth: SIDEBAR_MIN_WIDTH,
-				maxWidth: SIDEBAR_MAX_WIDTH,
-				borderRight: "1px solid var(--color-divider)",
-			}}
+			className={cn("relative flex min-h-0 flex-col overflow-hidden bg-surface-1", isMobile ? "w-full" : null)}
+			style={
+				isMobile
+					? undefined
+					: {
+							width,
+							minWidth: SIDEBAR_MIN_WIDTH,
+							maxWidth: SIDEBAR_MAX_WIDTH,
+							borderRight: "1px solid var(--color-divider)",
+						}
+			}
 		>
-			<div
-				role="separator"
-				aria-orientation="vertical"
-				aria-label="Resize sidebar"
-				onMouseDown={handleResizeMouseDown}
-				className="absolute top-0 right-0 bottom-0 z-10 w-[5px] cursor-ew-resize hover:bg-accent/30"
-			/>
+			{isMobile ? null : (
+				<div
+					role="separator"
+					aria-orientation="vertical"
+					aria-label="Resize sidebar"
+					onMouseDown={handleResizeMouseDown}
+					className="absolute top-0 right-0 bottom-0 z-10 w-[5px] cursor-ew-resize hover:bg-accent/30"
+				/>
+			)}
 			<div style={{ padding: "12px 12px 8px" }}>
 				<div>
 					<div className="font-semibold text-base flex items-baseline gap-1.5">

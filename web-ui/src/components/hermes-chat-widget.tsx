@@ -151,9 +151,9 @@ export default function HermesChatWidget(): ReactElement {
 	};
 
 	return (
-		<div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3">
+		<div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 md:bottom-4">
 			{isOpen ? (
-				<div className="pointer-events-auto flex h-[28rem] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-surface-1 shadow-2xl">
+				<div className="pointer-events-auto flex h-[min(32rem,calc(100svh-7rem))] w-[min(24rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-2xl border border-border bg-surface-1 shadow-2xl max-md:fixed max-md:inset-x-2 max-md:bottom-20 max-md:h-[min(32rem,calc(100svh-7.5rem))]">
 					<div className="flex items-center justify-between border-b border-border px-4 py-3">
 						<div>
 							<h2 className="text-sm font-semibold text-text-primary">Chat with Hermes</h2>
@@ -211,7 +211,7 @@ export default function HermesChatWidget(): ReactElement {
 			<button
 				type="button"
 				onClick={() => setIsOpen((current) => !current)}
-				className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface-2 text-2xl shadow-xl transition-colors hover:bg-surface-3 focus:outline-none focus:ring-2 focus:ring-border-focus"
+				className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface-2 text-2xl shadow-xl transition-colors hover:bg-surface-3 focus:outline-none focus:ring-2 focus:ring-border-focus max-md:mb-14"
 				aria-label={isOpen ? "Close Hermes chat" : "Open Hermes chat"}
 			>
 				<span aria-hidden>🤖</span>

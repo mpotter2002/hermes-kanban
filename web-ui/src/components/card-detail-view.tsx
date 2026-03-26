@@ -525,7 +525,7 @@ export function CardDetailView({
 
 	return (
 		<div
-			className="w-full"
+			className="kb-card-detail-view w-full"
 			style={{
 				display: "flex",
 				flex: "1 1 0",
@@ -576,8 +576,13 @@ export function CardDetailView({
 					<div style={{ display: "flex", flex: "1 1 0", minHeight: 0, overflow: "hidden" }}>{gitHistoryPanel}</div>
 				) : (
 					<>
-						<div ref={mainRowRef} style={{ display: "flex", flex: "1 1 0", minHeight: 0, overflow: "hidden" }}>
+						<div
+							ref={mainRowRef}
+							className="kb-card-detail-main-row"
+							style={{ display: "flex", flex: "1 1 0", minHeight: 0, overflow: "hidden" }}
+						>
 							<div
+								className="kb-card-detail-agent-pane"
 								style={{ display: isDiffExpanded ? "none" : "flex", width: agentPanelPercent, minWidth: 0, minHeight: 0 }}
 							>
 									{showClineAgentChatPanel ? (
@@ -648,6 +653,7 @@ export function CardDetailView({
 								</div>
 							{!isDiffExpanded ? (
 								<div
+									className="kb-card-detail-separator"
 									role="separator"
 									aria-orientation="vertical"
 									aria-label="Resize agent and diff panels"
@@ -673,6 +679,7 @@ export function CardDetailView({
 								</div>
 							) : null}
 							<div
+								className="kb-card-detail-diff-pane"
 								style={{
 									display: "flex",
 									width: isDiffExpanded ? "100%" : diffPanelPercent,

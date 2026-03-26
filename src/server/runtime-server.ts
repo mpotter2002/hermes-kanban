@@ -241,6 +241,26 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 				await trpcHttpHandler(req, res);
 				return;
 			}
+			if (pathname === "/api/infra-status") {
+				res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" });
+				const checkUrl = async (url: string): Promise<boolean> => {
+					try {
+						const controller = new AbortController();
+						const timeout = setTimeout(() => controller.abort(), 3000);
+						await fetch(url, { signal: controller.signal });
+						clearTimeout(timeout);
+						return true;
+					} catch {
+						return false;
+					}
+				};
+				const [gateway, dashboard] = await Promise.all([
+					checkUrl("http://localhost:18789/health"),
+					checkUrl("http://localhost:3001"),
+				]);
+				res.end(JSON.stringify({ gateway, dashboard, kanban: true, tailscale: true }));
+				return;
+			}
 			if (pathname.startsWith("/api/")) {
 				res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
 				res.end('{"error":"Not found"}');

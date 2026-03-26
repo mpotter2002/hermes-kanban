@@ -1,7 +1,7 @@
 // Main React composition root for the browser app.
 // Keep this file focused on wiring top-level hooks and surfaces together, and
 // push runtime-specific orchestration down into hooks and service modules.
-import { FolderOpen, X } from "lucide-react";
+import { Bot, FolderOpen, Server, X } from "lucide-react";
 import type { ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -77,6 +77,8 @@ import {
 import { TERMINAL_THEME_COLORS } from "@/terminal/theme-colors";
 import type { BoardData } from "@/types";
 
+type HomeSidebarSection = "projects" | "agent" | "infrastructure";
+
 export default function App(): ReactElement {
 	const [board, setBoard] = useState<BoardData>(() => createInitialBoardData());
 	const [sessions, setSessions] = useState<Record<string, RuntimeTaskSessionSummary>>({});
@@ -84,7 +86,7 @@ export default function App(): ReactElement {
 	const [canPersistWorkspaceState, setCanPersistWorkspaceState] = useState(false);
 	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [settingsInitialSection, setSettingsInitialSection] = useState<RuntimeSettingsSection | null>(null);
-	const [homeSidebarSection, setHomeSidebarSection] = useState<"projects" | "agent" | "infrastructure">("projects");
+	const [homeSidebarSection, setHomeSidebarSection] = useState<HomeSidebarSection>("projects");
 	const [isClearTrashDialogOpen, setIsClearTrashDialogOpen] = useState(false);
 	const [isGitHistoryOpen, setIsGitHistoryOpen] = useState(false);
 	const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -549,6 +551,15 @@ export default function App(): ReactElement {
 		}
 	}, [selectedCard]);
 
+	const handleSelectHomeSidebarSection = useCallback((section: HomeSidebarSection) => {
+		setHomeSidebarSection(section);
+	}, []);
+
+	const handleOpenMobileSection = useCallback((section: HomeSidebarSection) => {
+		setHomeSidebarSection(section);
+		setIsMobileSidebarOpen(true);
+	}, []);
+
 	const handleOpenSettings = useCallback((section?: RuntimeSettingsSection) => {
 		setSettingsInitialSection(section ?? null);
 		setIsSettingsOpen(true);
@@ -764,7 +775,7 @@ export default function App(): ReactElement {
 							currentProjectId={navigationCurrentProjectId}
 							removingProjectId={removingProjectId}
 							activeSection={homeSidebarSection}
-							onActiveSectionChange={setHomeSidebarSection}
+							onActiveSectionChange={handleSelectHomeSidebarSection}
 							canShowAgentSection={!hasNoProjects && Boolean(currentProjectId)}
 							agentSectionContent={homeSidebarAgentPanel}
 							onSelectProject={(projectId) => {
@@ -790,8 +801,9 @@ export default function App(): ReactElement {
 									isLoadingProjects={isProjectListLoading}
 									currentProjectId={navigationCurrentProjectId}
 									removingProjectId={removingProjectId}
+									isMobile
 									activeSection={homeSidebarSection}
-									onActiveSectionChange={setHomeSidebarSection}
+									onActiveSectionChange={handleSelectHomeSidebarSection}
 									canShowAgentSection={!hasNoProjects && Boolean(currentProjectId)}
 									agentSectionContent={homeSidebarAgentPanel}
 									onSelectProject={(projectId) => {
@@ -902,7 +914,7 @@ export default function App(): ReactElement {
 								</div>
 							</div>
 						) : (
-							<div className="flex flex-1 flex-col min-h-0 min-w-0">
+							<div className="flex min-h-0 min-w-0 flex-1 flex-col pb-16 md:pb-0">
 								<div className="flex flex-1 min-h-0 min-w-0 overflow-x-auto md:overflow-x-hidden">
 									{isGitHistoryOpen ? (
 										<GitHistoryView
@@ -990,7 +1002,7 @@ export default function App(): ReactElement {
 						)}
 					</div>
 					{selectedCard && detailSession ? (
-						<div className="absolute inset-0 flex min-h-0 min-w-0">
+						<div className="absolute inset-0 z-20 flex min-h-0 min-w-0 bg-surface-0">
 							<CardDetailView
 								selection={selectedCard}
 								currentProjectId={currentProjectId}
@@ -1061,6 +1073,31 @@ export default function App(): ReactElement {
 					) : null}
 				</div>
 			</div>
+			{!selectedCard ? (
+				<div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface-1/95 px-2 py-2 backdrop-blur md:hidden">
+					<div className="grid grid-cols-3 gap-2">
+						<MobileNavButton
+							label="Projects"
+							icon={<FolderOpen size={14} />}
+							isActive={homeSidebarSection === "projects"}
+							onClick={() => handleOpenMobileSection("projects")}
+						/>
+						<MobileNavButton
+							label="Infra"
+							icon={<Server size={14} />}
+							isActive={homeSidebarSection === "infrastructure"}
+							onClick={() => handleOpenMobileSection("infrastructure")}
+						/>
+						<MobileNavButton
+							label="Agent"
+							icon={<Bot size={14} />}
+							isActive={homeSidebarSection === "agent"}
+							onClick={() => handleOpenMobileSection("agent")}
+							disabled={hasNoProjects || !currentProjectId}
+						/>
+					</div>
+				</div>
+			) : null}
 			<RuntimeSettingsDialog
 				open={isSettingsOpen}
 				workspaceId={settingsWorkspaceId}
@@ -1210,5 +1247,32 @@ export default function App(): ReactElement {
 			</AlertDialog>
 			<HermesChatWidget />
 		</div>
+	);
+}
+
+function MobileNavButton({
+	label,
+	icon,
+	isActive,
+	onClick,
+	disabled = false,
+}: {
+	label: string;
+	icon: ReactElement;
+	isActive: boolean;
+	onClick: () => void;
+	disabled?: boolean;
+}): ReactElement {
+	return (
+		<Button
+			variant={isActive ? "primary" : "default"}
+			size="md"
+			icon={icon}
+			onClick={onClick}
+			disabled={disabled}
+			className="justify-center"
+		>
+			{label}
+		</Button>
 	);
 }

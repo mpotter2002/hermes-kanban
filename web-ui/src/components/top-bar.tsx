@@ -399,16 +399,14 @@ export function TopBar({
 	return (
 		<>
 			<nav
-			className="flex flex-nowrap items-center h-10 min-h-[40px] min-w-0 bg-surface-1"
-			style={{
-				paddingLeft: onBack ? 6 : 12,
-				paddingRight: 8,
-				borderBottom: "1px solid var(--color-divider)",
-			}}
-		>
-			<div
-				className="flex flex-nowrap items-center h-10 flex-1 min-w-0 overflow-hidden gap-1.5"
+				className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 bg-surface-1 py-1 md:h-10 md:min-h-[40px] md:flex-nowrap md:py-0"
+				style={{
+					paddingLeft: onBack ? 6 : 12,
+					paddingRight: 8,
+					borderBottom: "1px solid var(--color-divider)",
+				}}
 			>
+				<div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden max-md:w-full">
 				{onBack ? (
 					<div className="flex items-center shrink-0 overflow-visible">
 						<Button
@@ -504,10 +502,8 @@ export function TopBar({
 						onGitPush={onGitPush}
 					/>
 				) : null}
-			</div>
-			<div
-				className="flex flex-nowrap items-center h-10 pr-0.5 shrink-0"
-			>
+				</div>
+				<div className="flex shrink-0 items-center pr-0.5 max-md:w-full max-md:justify-end">
 				{!hideProjectDependentActions && onRunShortcut ? (
 					selectedShortcut ? (
 						<div className="flex">
@@ -631,7 +627,7 @@ export function TopBar({
 					data-testid="open-settings-button"
 					className="ml-0.5 mr-0.5"
 				/>
-			</div>
+				</div>
 			</nav>
 			<Dialog
 				open={isCreateShortcutDialogOpen}
