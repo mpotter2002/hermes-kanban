@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import useInfraStatus from "@/hooks/use-infra-status";
+import RoutingGuidePanel from "@/components/routing-guide-panel";
 
 type ServiceStatus = "checking" | "online" | "offline";
 
@@ -232,6 +233,9 @@ export default function InfraStatusPanel(): ReactElement {
 						<p className="text-xs text-text-secondary">Unavailable</p>
 					)}
 				</div>
+
+				{/* AI Routing Guide */}
+				<RoutingGuidePanel />
 			</div>
 		</div>
 	);
