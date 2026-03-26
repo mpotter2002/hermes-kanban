@@ -1,4 +1,4 @@
-import { Loader2, Send, X } from "lucide-react";
+import { Loader2, Send } from "lucide-react";
 import type { FormEvent, KeyboardEvent, ReactElement } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -74,7 +74,7 @@ function ChatBubble({ message }: { message: ChatMessage }): ReactElement {
 		<div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
 			<div
 				className={cn(
-					"max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap",
+					"max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm",
 					isUser
 						? "rounded-br-md bg-accent text-white"
 						: isSystem
@@ -88,8 +88,7 @@ function ChatBubble({ message }: { message: ChatMessage }): ReactElement {
 	);
 }
 
-export default function HermesChatWidget(): ReactElement {
-	const [isOpen, setIsOpen] = useState(false);
+export function HermesChatPanel(): ReactElement {
 	const [draft, setDraft] = useState("");
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isSending, setIsSending] = useState(false);
@@ -116,12 +115,11 @@ export default function HermesChatWidget(): ReactElement {
 			return;
 		}
 
-		const userMessage: ChatMessage = {
+		appendMessage({
 			id: `user-${Date.now()}`,
 			role: "user",
 			text,
-		};
-		appendMessage(userMessage);
+		});
 		setDraft("");
 		setIsSending(true);
 
@@ -151,71 +149,52 @@ export default function HermesChatWidget(): ReactElement {
 	};
 
 	return (
-		<div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 md:bottom-4">
-			{isOpen ? (
-				<div className="pointer-events-auto flex h-[min(32rem,calc(100svh-7rem))] w-[min(24rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-2xl border border-border bg-surface-1 shadow-2xl max-md:fixed max-md:inset-x-2 max-md:bottom-20 max-md:h-[min(32rem,calc(100svh-7.5rem))]">
-					<div className="flex items-center justify-between border-b border-border px-4 py-3">
-						<div>
-							<h2 className="text-sm font-semibold text-text-primary">Chat with Hermes</h2>
-							<p className="text-xs text-text-secondary">Local Hermes gateway messaging.</p>
-						</div>
-						<Button
-							variant="ghost"
-							size="sm"
-							icon={<X size={16} />}
-							onClick={() => setIsOpen(false)}
-							aria-label="Close Hermes chat"
-						/>
+		<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-surface-1">
+			<div className="border-b border-border px-4 py-3">
+				<h2 className="text-sm font-semibold text-text-primary">Hermes</h2>
+				<p className="text-xs text-text-secondary">Local Hermes gateway messaging.</p>
+			</div>
+			<div ref={messageListRef} className="flex-1 space-y-3 overflow-y-auto bg-surface-0/40 px-3 py-3">
+				{messages.length === 0 ? (
+					<div className="rounded-xl border border-dashed border-border bg-surface-2/60 px-3 py-4 text-sm text-text-secondary">
+						Send a message to Hermes.
 					</div>
-					<div ref={messageListRef} className="flex-1 space-y-3 overflow-y-auto bg-surface-0/40 px-3 py-3">
-						{messages.length === 0 ? (
-							<div className="rounded-xl border border-dashed border-border bg-surface-2/60 px-3 py-4 text-sm text-text-secondary">
-								Send a message to Hermes.
-							</div>
-						) : (
-							messages.map((message) => <ChatBubble key={message.id} message={message} />)
-						)}
-						{isSending ? (
-							<div className="flex justify-start">
-								<div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-md border border-border bg-surface-2 px-3 py-2 text-sm text-text-secondary">
-									<Loader2 size={14} className="animate-spin" />
-									Thinking...
-								</div>
-							</div>
-						) : null}
-					</div>
-					<form onSubmit={(event) => void handleSubmit(event)} className="border-t border-border bg-surface-1 p-3">
-						<div className="flex items-end gap-2">
-							<textarea
-								value={draft}
-								onChange={(event) => setDraft(event.target.value)}
-								onKeyDown={handleComposerKeyDown}
-								placeholder="Message Hermes"
-								rows={2}
-								className="min-h-20 flex-1 resize-none rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none"
-							/>
-							<Button
-								type="submit"
-								variant="primary"
-								size="md"
-								icon={isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-								disabled={!canSend}
-								className="shrink-0"
-							>
-								Send
-							</Button>
+				) : (
+					messages.map((message) => <ChatBubble key={message.id} message={message} />)
+				)}
+				{isSending ? (
+					<div className="flex justify-start">
+						<div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-md border border-border bg-surface-2 px-3 py-2 text-sm text-text-secondary">
+							<Loader2 size={14} className="animate-spin" />
+							Thinking...
 						</div>
-					</form>
+					</div>
+				) : null}
+			</div>
+			<form onSubmit={(event) => void handleSubmit(event)} className="border-t border-border bg-surface-1 p-3">
+				<div className="flex items-end gap-2">
+					<textarea
+						value={draft}
+						onChange={(event) => setDraft(event.target.value)}
+						onKeyDown={handleComposerKeyDown}
+						placeholder="Message Hermes"
+						rows={2}
+						className="min-h-20 flex-1 resize-none rounded-xl border border-border bg-surface-2 px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-border-focus focus:outline-none"
+					/>
+					<Button
+						type="submit"
+						variant="primary"
+						size="md"
+						icon={isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+						disabled={!canSend}
+						className="shrink-0"
+					>
+						Send
+					</Button>
 				</div>
-			) : null}
-			<button
-				type="button"
-				onClick={() => setIsOpen((current) => !current)}
-				className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface-2 text-2xl shadow-xl transition-colors hover:bg-surface-3 focus:outline-none focus:ring-2 focus:ring-border-focus max-md:mb-14"
-				aria-label={isOpen ? "Close Hermes chat" : "Open Hermes chat"}
-			>
-				<span aria-hidden>🤖</span>
-			</button>
+			</form>
 		</div>
 	);
 }
+
+export default HermesChatPanel;

@@ -1,7 +1,8 @@
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
+import HermesChatPanel from "@/components/hermes-chat-widget";
 import InfraStatusPanel from "@/components/infra-status-panel";
 import { Button } from "@/components/ui/button";
 import { ClineIcon } from "@/components/ui/cline-icon";
@@ -67,8 +68,6 @@ export function ProjectNavigationPanel({
 	isMobile = false,
 	activeSection,
 	onActiveSectionChange,
-	canShowAgentSection,
-	agentSectionContent,
 	onSelectProject,
 	onRemoveProject,
 	onAddProject,
@@ -78,10 +77,8 @@ export function ProjectNavigationPanel({
 	currentProjectId: string | null;
 	removingProjectId: string | null;
 	isMobile?: boolean;
-	activeSection: "projects" | "agent" | "infrastructure";
-	onActiveSectionChange: (section: "projects" | "agent" | "infrastructure") => void;
-	canShowAgentSection: boolean;
-	agentSectionContent?: ReactNode;
+	activeSection: "projects" | "hermes" | "infrastructure";
+	onActiveSectionChange: (section: "projects" | "hermes" | "infrastructure") => void;
 	onSelectProject: (projectId: string) => void;
 	onRemoveProject: (projectId: string) => Promise<boolean>;
 	onAddProject: () => void;
@@ -221,26 +218,19 @@ export function ProjectNavigationPanel({
 						</button>
 						<button
 							type="button"
-							onClick={() => onActiveSectionChange("agent")}
-							disabled={!canShowAgentSection}
+							onClick={() => onActiveSectionChange("hermes")}
 							className={cn(
 								"cursor-pointer rounded-sm px-2 py-1 text-xs font-medium",
-								activeSection === "agent"
+								activeSection === "hermes"
 									? "bg-surface-4 text-text-primary"
 									: "text-text-secondary hover:text-text-primary",
-								!canShowAgentSection ? "cursor-not-allowed opacity-50" : null,
 							)}
 						>
-							Kanban Agent
+							Hermes
 						</button>
 					</div>
 				</div>
-				{activeSection === "agent" ? (
-					<p className="text-text-tertiary text-xs" style={{ padding: "8px 4px 0" }}>
-						Add tasks, link dependencies, break work down, and manage your board. Try asking to
-						create and link some tasks to get started.
-					</p>
-				) : activeSection === "infrastructure" ? (
+				{activeSection === "infrastructure" ? (
 					<p className="text-text-tertiary text-xs" style={{ padding: "8px 4px 0" }}>
 						Local Hermes runtime health and network connectivity.
 					</p>
@@ -293,14 +283,10 @@ export function ProjectNavigationPanel({
 					</div>
 					<ShortcutsCard />
 				</>
-			) : activeSection === "agent" ? (
+			) : activeSection === "hermes" ? (
 				<div className="flex flex-1 min-h-0 flex-col">
 					<div className="flex flex-1 min-h-0 overflow-hidden bg-surface-1 px-2 pb-2 pt-1">
-						{agentSectionContent ?? (
-							<div className="flex w-full items-center justify-center rounded-md border border-border bg-surface-2 px-3 text-center text-sm text-text-secondary">
-								Select a project to use the agent.
-							</div>
-						)}
+						<HermesChatPanel />
 					</div>
 				</div>
 			) : (

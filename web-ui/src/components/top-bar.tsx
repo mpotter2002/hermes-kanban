@@ -42,7 +42,7 @@ import { isMacPlatform } from "@/utils/platform";
 
 type SettingsSection = "shortcuts";
 type CreateShortcutResult = { ok: boolean; message?: string };
-type HomeSidebarSection = "projects" | "agent" | "infrastructure";
+type HomeSidebarSection = "projects" | "hermes" | "infrastructure";
 
 function getWorkspacePathSegments(path: string): string[] {
 	return path

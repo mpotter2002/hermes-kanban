@@ -11,7 +11,6 @@ import { ClearTrashDialog } from "@/components/clear-trash-dialog";
 import { DebugDialog } from "@/components/debug-dialog";
 import { AgentTerminalPanel } from "@/components/detail-panels/agent-terminal-panel";
 import { GitHistoryView } from "@/components/git-history-view";
-import HermesChatWidget from "@/components/hermes-chat-widget";
 import { KanbanBoard } from "@/components/kanban-board";
 import { ProjectNavigationPanel } from "@/components/project-navigation-panel";
 import { ResizableBottomPane } from "@/components/resizable-bottom-pane";
@@ -41,7 +40,6 @@ import { useBoardInteractions } from "@/hooks/use-board-interactions";
 import { useDebugTools } from "@/hooks/use-debug-tools";
 import { useDocumentVisibility } from "@/hooks/use-document-visibility";
 import { useGitActions } from "@/hooks/use-git-actions";
-import { useHomeSidebarAgentPanel } from "@/hooks/use-home-sidebar-agent-panel";
 import { useKanbanAccessGate } from "@/hooks/use-kanban-access-gate";
 import { useOpenWorkspace } from "@/hooks/use-open-workspace";
 import { usePrewarmedAgentTerminals } from "@/hooks/use-prewarmed-agent-terminals";
@@ -77,7 +75,7 @@ import {
 import { TERMINAL_THEME_COLORS } from "@/terminal/theme-colors";
 import type { BoardData } from "@/types";
 
-type HomeSidebarSection = "projects" | "agent" | "infrastructure";
+type HomeSidebarSection = "projects" | "hermes" | "infrastructure";
 
 export default function App(): ReactElement {
 	const [board, setBoard] = useState<BoardData>(() => createInitialBoardData());
@@ -109,7 +107,6 @@ export default function App(): ReactElement {
 		taskChatMessagesByTaskId,
 		latestTaskReadyForReview,
 		latestMcpAuthStatuses,
-		clineSessionContextVersion,
 		streamError,
 		isRuntimeDisconnected,
 		hasReceivedSnapshot,
@@ -419,16 +416,6 @@ export default function App(): ReactElement {
 		terminalBackgroundColor: TERMINAL_THEME_COLORS.surfacePrimary,
 	});
 	const homeTerminalSummary = sessions[homeTerminalTaskId] ?? null;
-	const homeSidebarAgentPanel = useHomeSidebarAgentPanel({
-		currentProjectId,
-		hasNoProjects,
-		runtimeProjectConfig,
-		clineSessionContextVersion,
-		taskSessions: sessions,
-		workspaceGit,
-		latestTaskChatMessage,
-		taskChatMessagesByTaskId,
-	});
 	const { runningShortcutLabel, handleSelectShortcutLabel, handleRunShortcut, handleCreateShortcut } = useShortcutActions({
 		currentProjectId,
 		selectedShortcutLabel: runtimeProjectConfig?.selectedShortcutLabel,
@@ -776,8 +763,6 @@ export default function App(): ReactElement {
 							removingProjectId={removingProjectId}
 							activeSection={homeSidebarSection}
 							onActiveSectionChange={handleSelectHomeSidebarSection}
-							canShowAgentSection={!hasNoProjects && Boolean(currentProjectId)}
-							agentSectionContent={homeSidebarAgentPanel}
 							onSelectProject={(projectId) => {
 								void handleSelectProject(projectId);
 							}}
@@ -804,8 +789,6 @@ export default function App(): ReactElement {
 									isMobile
 									activeSection={homeSidebarSection}
 									onActiveSectionChange={handleSelectHomeSidebarSection}
-									canShowAgentSection={!hasNoProjects && Boolean(currentProjectId)}
-									agentSectionContent={homeSidebarAgentPanel}
 									onSelectProject={(projectId) => {
 										setIsMobileSidebarOpen(false);
 										void handleSelectProject(projectId);
@@ -1090,11 +1073,10 @@ export default function App(): ReactElement {
 							onClick={() => handleOpenMobileSection("infrastructure")}
 						/>
 						<MobileNavButton
-							label="Agent"
+							label="Hermes"
 							icon={<Bot size={14} />}
-							isActive={homeSidebarSection === "agent"}
-							onClick={() => handleOpenMobileSection("agent")}
-							disabled={hasNoProjects || !currentProjectId}
+							isActive={homeSidebarSection === "hermes"}
+							onClick={() => handleOpenMobileSection("hermes")}
 						/>
 					</div>
 				</div>
@@ -1246,7 +1228,6 @@ export default function App(): ReactElement {
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialog>
-			<HermesChatWidget />
 		</div>
 	);
 }
