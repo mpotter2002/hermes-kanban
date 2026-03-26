@@ -1,5 +1,7 @@
+import { execSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { createServer, type IncomingMessage } from "node:http";
+import { cpus, freemem, loadavg, totalmem } from "node:os";
 import { join } from "node:path";
 
 import { createHTTPHandler } from "@trpc/server/adapters/standalone";
@@ -254,11 +256,40 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 						return false;
 					}
 				};
-				const [gateway, dashboard] = await Promise.all([
+				// Read real system stats
+				const getSystemStats = () => {
+					try {
+						const totalMem = totalmem();
+						const freeMem = freemem();
+						const usedMem = totalMem - freeMem;
+						let diskUsed = 0;
+						let diskTotal = 0;
+						try {
+							const dfOutput = execSync("df -k / | tail -1", { timeout: 2000 }).toString().trim();
+							const parts = dfOutput.split(/\s+/);
+							diskTotal = parseInt(parts[1] ?? "0") / 1024 / 1024;
+							diskUsed = parseInt(parts[2] ?? "0") / 1024 / 1024;
+						} catch { /* ignore */ }
+						const load = loadavg()[0] ?? 0;
+						const cpuCount = cpus().length;
+						const cpuPct = Math.min(100, (load / cpuCount) * 100);
+						return {
+							cpu: Math.round(cpuPct * 10) / 10,
+							mem_used_gb: Math.round((usedMem / 1024 / 1024 / 1024) * 100) / 100,
+							mem_total_gb: Math.round((totalMem / 1024 / 1024 / 1024) * 100) / 100,
+							disk_used_gb: Math.round(diskUsed * 100) / 100,
+							disk_total_gb: Math.round(diskTotal * 100) / 100,
+						};
+					} catch {
+						return { cpu: 0, mem_used_gb: 0, mem_total_gb: 0, disk_used_gb: 0, disk_total_gb: 0 };
+					}
+				};
+				const [gateway, dashboard, sysStats] = await Promise.all([
 					checkUrl("http://localhost:18789/health"),
 					checkUrl("http://localhost:3001"),
+					Promise.resolve(getSystemStats()),
 				]);
-				res.end(JSON.stringify({ gateway, dashboard, kanban: true, tailscale: true }));
+				res.end(JSON.stringify({ gateway, dashboard, kanban: true, tailscale: true, ...sysStats }));
 				return;
 			}
 			if (pathname.startsWith("/api/")) {
