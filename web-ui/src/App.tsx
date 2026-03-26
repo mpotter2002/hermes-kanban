@@ -1,7 +1,7 @@
 // Main React composition root for the browser app.
 // Keep this file focused on wiring top-level hooks and surfaces together, and
 // push runtime-specific orchestration down into hooks and service modules.
-import { Bot, FolderOpen, Server, X } from "lucide-react";
+import { Bot, FolderOpen, Server } from "lucide-react";
 import type { ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -312,6 +312,7 @@ export default function App(): ReactElement {
 		handleSaveAndStartEditedTask,
 		handleCreateTask,
 		handleCreateTasks,
+		handleCreateTaskFromPrompt,
 		resetTaskEditorState,
 	} = useTaskEditor({
 		board,
@@ -543,9 +544,28 @@ export default function App(): ReactElement {
 	}, []);
 
 	const handleOpenMobileSection = useCallback((section: HomeSidebarSection) => {
+		if (isMobileSidebarOpen && homeSidebarSection === section) {
+			setIsMobileSidebarOpen(false);
+			return;
+		}
 		setHomeSidebarSection(section);
 		setIsMobileSidebarOpen(true);
-	}, []);
+	}, [homeSidebarSection, isMobileSidebarOpen]);
+
+	const handleCreateHermesTask = useCallback(
+		(task: { title: string; description: string | null }) => {
+			const prompt = task.description ? `${task.title}\n\n${task.description}` : task.title;
+			const createdTask = handleCreateTaskFromPrompt(prompt);
+			if (!createdTask) {
+				return null;
+			}
+			return {
+				taskId: createdTask.id,
+				prompt: createdTask.prompt,
+			};
+		},
+		[handleCreateTaskFromPrompt],
+	);
 
 	const handleOpenSettings = useCallback((section?: RuntimeSettingsSection) => {
 		setSettingsInitialSection(section ?? null);
@@ -752,7 +772,7 @@ export default function App(): ReactElement {
 	}
 
 	return (
-		<div className="flex h-[100svh] min-w-0 overflow-hidden">
+		<div className="relative flex h-[100svh] min-w-0 overflow-hidden">
 			{!selectedCard ? (
 				<>
 					<div className="relative z-30 hidden min-h-0 md:flex">
@@ -770,23 +790,19 @@ export default function App(): ReactElement {
 							onAddProject={() => {
 								void handleAddProject();
 							}}
+							onCreateHermesTask={handleCreateHermesTask}
 						/>
 					</div>
 					{isMobileSidebarOpen ? (
-						<div className="absolute inset-0 z-40 flex md:hidden">
-							<button
-								type="button"
-								className="flex-1 bg-black/50"
-								onClick={() => setIsMobileSidebarOpen(false)}
-								aria-label="Close sidebar overlay"
-							/>
-							<div className="relative flex h-full min-h-0 w-[min(22rem,88vw)] shrink-0">
+						<div className="absolute inset-x-0 top-0 bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] z-40 md:hidden">
+							<div className="flex h-full min-h-0 w-full">
 								<ProjectNavigationPanel
 									projects={displayedProjects}
 									isLoadingProjects={isProjectListLoading}
 									currentProjectId={navigationCurrentProjectId}
 									removingProjectId={removingProjectId}
 									isMobile
+									isMobileOverlay
 									activeSection={homeSidebarSection}
 									onActiveSectionChange={handleSelectHomeSidebarSection}
 									onSelectProject={(projectId) => {
@@ -797,14 +813,7 @@ export default function App(): ReactElement {
 									onAddProject={() => {
 										void handleAddProject();
 									}}
-								/>
-								<Button
-									variant="ghost"
-									size="sm"
-									icon={<X size={16} />}
-									onClick={() => setIsMobileSidebarOpen(false)}
-									className="absolute right-2 top-2 md:hidden"
-									aria-label="Close sidebar"
+									onCreateHermesTask={handleCreateHermesTask}
 								/>
 							</div>
 						</div>

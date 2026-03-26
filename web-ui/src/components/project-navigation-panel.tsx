@@ -66,22 +66,26 @@ export function ProjectNavigationPanel({
 	currentProjectId,
 	removingProjectId,
 	isMobile = false,
+	isMobileOverlay = false,
 	activeSection,
 	onActiveSectionChange,
 	onSelectProject,
 	onRemoveProject,
 	onAddProject,
+	onCreateHermesTask,
 }: {
 	projects: RuntimeProjectSummary[];
 	isLoadingProjects?: boolean;
 	currentProjectId: string | null;
 	removingProjectId: string | null;
 	isMobile?: boolean;
+	isMobileOverlay?: boolean;
 	activeSection: "projects" | "hermes" | "infrastructure";
 	onActiveSectionChange: (section: "projects" | "hermes" | "infrastructure") => void;
 	onSelectProject: (projectId: string) => void;
 	onRemoveProject: (projectId: string) => Promise<boolean>;
 	onAddProject: () => void;
+	onCreateHermesTask?: (task: { title: string; description: string | null }) => { taskId: string; prompt: string } | null;
 }): React.ReactElement {
 	const sortedProjects = [...projects].sort((a, b) => a.path.localeCompare(b.path));
 
@@ -162,7 +166,11 @@ export function ProjectNavigationPanel({
 
 	return (
 		<aside
-			className={cn("relative flex min-h-0 flex-col overflow-hidden bg-surface-1", isMobile ? "w-full" : null)}
+			className={cn(
+				"relative flex min-h-0 flex-col overflow-hidden bg-surface-1",
+				isMobile ? "w-full" : null,
+				isMobileOverlay ? "h-full border-t border-border" : null,
+			)}
 			style={
 				isMobile
 					? undefined
@@ -183,7 +191,10 @@ export function ProjectNavigationPanel({
 					className="absolute top-0 right-0 bottom-0 z-10 w-[5px] cursor-ew-resize hover:bg-accent/30"
 				/>
 			)}
-			<div style={{ padding: "12px 12px 8px" }}>
+			<div
+				className={cn(isMobileOverlay ? "border-b border-border bg-surface-1 px-3 py-3" : null)}
+				style={isMobileOverlay ? undefined : { padding: "12px 12px 8px" }}
+			>
 				<div>
 					<div className="font-semibold text-base flex items-baseline gap-1.5">
 						<ClineIcon size={18} className="text-text-primary shrink-0 self-center" />
@@ -285,8 +296,13 @@ export function ProjectNavigationPanel({
 				</>
 			) : activeSection === "hermes" ? (
 				<div className="flex flex-1 min-h-0 flex-col">
-					<div className="flex flex-1 min-h-0 overflow-hidden bg-surface-1 px-2 pb-2 pt-1">
-						<HermesChatPanel />
+					<div
+						className={cn(
+							"flex flex-1 min-h-0 overflow-hidden bg-surface-1 px-2 pb-2 pt-1",
+							isMobileOverlay ? "px-0 pb-0 pt-0" : null,
+						)}
+					>
+						<HermesChatPanel onCreateTask={onCreateHermesTask} isMobile={isMobileOverlay} />
 					</div>
 				</div>
 			) : (

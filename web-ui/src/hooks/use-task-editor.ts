@@ -33,6 +33,10 @@ interface CreateTaskOptions {
 	keepDialogOpen?: boolean;
 }
 
+interface CreateTaskFromPromptOptions {
+	baseRef?: string;
+}
+
 export interface UseTaskEditorResult {
 	isInlineTaskCreateOpen: boolean;
 	newTaskPrompt: string;
@@ -70,6 +74,7 @@ export interface UseTaskEditorResult {
 	handleSaveAndStartEditedTask: () => void;
 	handleCreateTask: (options?: CreateTaskOptions) => string | null;
 	handleCreateTasks: (prompts: string[], options?: CreateTaskOptions) => string[];
+	handleCreateTaskFromPrompt: (prompt: string, options?: CreateTaskFromPromptOptions) => BoardCard | null;
 	resetTaskEditorState: () => void;
 }
 
@@ -392,6 +397,44 @@ export function useTaskEditor({
 		setBoard,
 	]);
 
+	const handleCreateTaskFromPrompt = useCallback(
+		(promptInput: string, options?: CreateTaskFromPromptOptions): BoardCard | null => {
+			const prompt = promptInput.trim();
+			if (!prompt) {
+				return null;
+			}
+
+			const baseRef = options?.baseRef || newTaskBranchRef || resolvedDefaultTaskBranchRef;
+			if (!baseRef) {
+				return null;
+			}
+
+			const created = addTaskToColumnWithResult(board, "backlog", {
+				prompt,
+				startInPlanMode: false,
+				autoReviewEnabled: false,
+				autoReviewMode: "commit",
+				images: [],
+				baseRef,
+			});
+			setBoard(created.board);
+			trackTaskCreated({
+				selected_agent_id: toTelemetrySelectedAgentId(selectedAgentId),
+				start_in_plan_mode: false,
+				prompt_character_count: prompt.length,
+			});
+			if (currentProjectId) {
+				setLastCreatedTaskBranchByProjectId((current) => ({
+					...current,
+					[currentProjectId]: baseRef,
+				}));
+			}
+			setNewTaskBranchRef(baseRef);
+			return created.task;
+		},
+		[board, currentProjectId, newTaskBranchRef, resolvedDefaultTaskBranchRef, selectedAgentId, setBoard],
+	);
+
 	const resetTaskEditorState = useCallback(() => {
 		setIsInlineTaskCreateOpen(false);
 		setEditingTaskId(null);
@@ -441,6 +484,7 @@ export function useTaskEditor({
 		handleSaveAndStartEditedTask,
 		handleCreateTask,
 		handleCreateTasks,
+		handleCreateTaskFromPrompt,
 		resetTaskEditorState,
 	};
 }
