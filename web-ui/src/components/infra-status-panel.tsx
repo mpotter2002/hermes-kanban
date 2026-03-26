@@ -158,18 +158,6 @@ export default function InfraStatusPanel(): ReactElement {
 
 				{/* Agent Sessions */}
 				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
-					<p className="mb-2 text-sm font-medium text-text-primary">Active Sessions</p>
-					{loading ? (
-						<p className="text-xs text-text-secondary">Loading...</p>
-					) : (
-						<div className="flex flex-col gap-2.5">
-							<UsageBar label="Claude Code" value={data?.claude_sessions ?? 0} max={Math.max(data?.claude_sessions ?? 0, 4)} unit="sessions" />
-							<UsageBar label="OpenAI Codex" value={data?.codex_sessions ?? 0} max={Math.max(data?.codex_sessions ?? 0, 4)} unit="sessions" />
-						</div>
-					)}
-				</div>
-
-				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
 					<div className="mb-2 flex items-center justify-between gap-3">
 						<div>
 							<p className="text-sm font-medium text-text-primary">Claude Usage</p>
@@ -212,6 +200,21 @@ export default function InfraStatusPanel(): ReactElement {
 							) : null}
 						</div>
 					)}
+				</div>
+
+				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
+					<div className="mb-2 flex items-center justify-between gap-3">
+						<div>
+							<p className="text-sm font-medium text-text-primary">Codex Usage</p>
+							<p className="mt-0.5 text-xs text-text-secondary">Placeholder until a clean Codex usage source is wired</p>
+						</div>
+						<StatusDot status={"offline"} />
+					</div>
+					<div className="flex flex-col gap-2.5">
+						<ClaudeUsageBar label="5h window" usedPercentage={undefined} />
+						<ClaudeUsageBar label="7d window" usedPercentage={undefined} />
+						<p className="text-xs text-text-secondary">Codex quota tracking will be added once we have a reliable official/local source.</p>
+					</div>
 				</div>
 
 				{/* System Resources */}
