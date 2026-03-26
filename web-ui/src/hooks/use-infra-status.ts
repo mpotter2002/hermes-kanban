@@ -7,6 +7,8 @@ export interface InfraStatusResponse {
 	tailscale: boolean;
 	claude_running: boolean;
 	codex_running: boolean;
+	claude_sessions: number;
+	codex_sessions: number;
 	cpu: number;
 	mem_used_gb: number;
 	mem_total_gb: number;

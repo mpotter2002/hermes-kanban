@@ -1,7 +1,8 @@
 import { execSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer, type IncomingMessage } from "node:http";
-import { cpus, freemem, loadavg, totalmem } from "node:os";
+import { cpus, freemem, homedir, loadavg, totalmem } from "node:os";
 import { join } from "node:path";
 
 import { createHTTPHandler } from "@trpc/server/adapters/standalone";
@@ -245,6 +246,31 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 			}
 			if (pathname === "/api/infra-status") {
 				res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" });
+				// Count active sessions per agent from workspace state files
+				const getAgentSessionCounts = (): Record<string, number> => {
+					try {
+						const stateDir = join(homedir(), ".cline", "kanban", "workspaces");
+						const workspaces = readdirSync(stateDir, { withFileTypes: true })
+							.filter((d) => d.isDirectory())
+							.map((d) => d.name);
+						const counts: Record<string, number> = {};
+						for (const ws of workspaces) {
+							try {
+								const sessionsPath = join(stateDir, ws, "sessions.json");
+								const raw = readFileSync(sessionsPath, "utf-8");
+								const sessions = JSON.parse(raw) as Record<string, { agentId?: string; state?: string }>;
+								for (const session of Object.values(sessions)) {
+									if (session.state === "running" && session.agentId) {
+										counts[session.agentId] = (counts[session.agentId] ?? 0) + 1;
+									}
+								}
+							} catch { /* skip */ }
+						}
+						return counts;
+					} catch {
+						return {};
+					}
+				};
 				const checkUrl = async (url: string): Promise<boolean> => {
 					try {
 						const controller = new AbortController();
@@ -312,7 +338,13 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 					checkUrl("http://localhost:3001"),
 					Promise.resolve(getSystemStats()),
 				]);
-				res.end(JSON.stringify({ gateway, dashboard, kanban: true, tailscale: true, ...sysStats }));
+				const agentSessions = getAgentSessionCounts();
+				res.end(JSON.stringify({
+					gateway, dashboard, kanban: true, tailscale: true,
+					...sysStats,
+					claude_sessions: agentSessions["claude"] ?? 0,
+					codex_sessions: agentSessions["codex"] ?? 0,
+				}));
 				return;
 			}
 			if (pathname.startsWith("/api/")) {

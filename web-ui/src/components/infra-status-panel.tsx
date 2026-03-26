@@ -20,7 +20,7 @@ function UsageBar({ label, value, max, unit }: { label: string; value: number; m
 		<div className="flex flex-col gap-1">
 			<div className="flex justify-between text-xs text-text-secondary">
 				<span>{label}</span>
-				<span>{unit === "%" ? `${Math.round(pct)}%` : `${value.toFixed(1)} / ${max.toFixed(1)} ${unit}`}</span>
+				<span>{unit === "%" ? `${Math.round(pct)}%` : unit === "sessions" ? `${Math.round(value)} active` : `${value.toFixed(1)} / ${max.toFixed(1)} ${unit}`}</span>
 			</div>
 			<div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
 				<div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }} />
@@ -113,6 +113,19 @@ export default function InfraStatusPanel(): ReactElement {
 						<StatusDot status={svc.status} />
 					</div>
 				))}
+
+				{/* Agent Sessions */}
+				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
+					<p className="mb-2 text-sm font-medium text-text-primary">Active Sessions</p>
+					{loading ? (
+						<p className="text-xs text-text-secondary">Loading...</p>
+					) : (
+						<div className="flex flex-col gap-2.5">
+							<UsageBar label="Claude Code" value={data?.claude_sessions ?? 0} max={Math.max(data?.claude_sessions ?? 0, 4)} unit="sessions" />
+							<UsageBar label="OpenAI Codex" value={data?.codex_sessions ?? 0} max={Math.max(data?.codex_sessions ?? 0, 4)} unit="sessions" />
+						</div>
+					)}
+				</div>
 
 				{/* System Resources */}
 				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
