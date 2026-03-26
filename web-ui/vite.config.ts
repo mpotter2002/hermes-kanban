@@ -55,6 +55,7 @@ export default defineConfig({
 	// 770 KB raw and 108.5 KB gzipped across emitted frontend assets.
 	// Compared with fully minifying everything, this costs about 545 KB raw and
 	// 58.5 KB gzipped, which is the current tradeoff for keeping OpenCode stable.
+	base: "/hermes-kanban/",
 	plugins: [tailwindcss(), react(), selectiveBuildMinifyPlugin()],
 	envPrefix: ["VITE_", "POSTHOG_"],
 	define: {

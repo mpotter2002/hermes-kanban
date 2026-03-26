@@ -41,8 +41,17 @@ function shouldFallbackToIndexHtml(pathname: string): boolean {
 	return !extname(pathname);
 }
 
+const APP_BASE = "/hermes-kanban";
+
 export function normalizeRequestPath(urlPathname: string): string {
-	const trimmed = urlPathname === "/" ? "/index.html" : urlPathname;
+	let pathname = urlPathname;
+	// Strip the app base prefix so asset lookups work correctly when served at a subpath
+	if (pathname.startsWith(APP_BASE + "/")) {
+		pathname = pathname.slice(APP_BASE.length);
+	} else if (pathname === APP_BASE) {
+		pathname = "/index.html";
+	}
+	const trimmed = pathname === "/" ? "/index.html" : pathname;
 	return decodeURIComponent(trimmed.split("?")[0] ?? trimmed);
 }
 
