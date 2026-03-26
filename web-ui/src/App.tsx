@@ -832,6 +832,7 @@ export default function App(): ReactElement {
 				<TopBar
 					onBack={selectedCard ? handleBack : undefined}
 					onToggleSidebar={!selectedCard ? () => setIsMobileSidebarOpen((current) => !current) : undefined}
+					onActiveSectionChange={handleSelectHomeSidebarSection}
 					workspacePath={navbarWorkspacePath}
 					isWorkspacePathLoading={shouldShowProjectLoadingState}
 					workspaceHint={navbarWorkspaceHint}

@@ -1,36 +1,7 @@
 import type { ReactElement } from "react";
-import { useEffect, useState } from "react";
+import useInfraStatus from "@/hooks/use-infra-status";
 
 type ServiceStatus = "checking" | "online" | "offline";
-
-interface InfraStatusResponse {
-	gateway: boolean;
-	dashboard: boolean;
-	kanban: boolean;
-	tailscale: boolean;
-	cpu: number;
-	mem_used_gb: number;
-	mem_total_gb: number;
-	disk_used_gb: number;
-	disk_total_gb: number;
-}
-
-const HEALTH_POLL_INTERVAL_MS = 15_000;
-
-async function fetchInfraStatus(): Promise<InfraStatusResponse | null> {
-	try {
-		const controller = new AbortController();
-		const timeoutId = window.setTimeout(() => controller.abort(), 5_000);
-		// Use BASE_URL so it works both at / and at /hermes-kanban/
-		const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-		const response = await fetch(`${base}/api/infra-status`, { signal: controller.signal });
-		window.clearTimeout(timeoutId);
-		if (!response.ok) return null;
-		return (await response.json()) as InfraStatusResponse;
-	} catch {
-		return null;
-	}
-}
 
 function StatusDot({ status }: { status: ServiceStatus }): ReactElement {
 	const colorClass =
@@ -66,25 +37,7 @@ interface ServiceCard {
 }
 
 export default function InfraStatusPanel(): ReactElement {
-	const [data, setData] = useState<InfraStatusResponse | null>(null);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		let cancelled = false;
-		const refresh = async (): Promise<void> => {
-			const result = await fetchInfraStatus();
-			if (!cancelled) {
-				setData(result);
-				setLoading(false);
-			}
-		};
-		void refresh();
-		const id = window.setInterval(() => void refresh(), HEALTH_POLL_INTERVAL_MS);
-		return () => {
-			cancelled = true;
-			window.clearInterval(id);
-		};
-	}, []);
+	const { data, isLoading: loading } = useInfraStatus();
 
 	const toStatus = (value: boolean | undefined): ServiceStatus => {
 		if (loading) return "checking";
@@ -120,15 +73,38 @@ export default function InfraStatusPanel(): ReactElement {
 			status: "online",
 		},
 	];
+	const agentCards: ServiceCard[] = [
+		{
+			id: "claude",
+			name: "Claude Code",
+			detail: loading ? "Checking..." : data?.claude_running ? "Active" : "Idle",
+			status: toStatus(data?.claude_running),
+		},
+		{
+			id: "codex",
+			name: "OpenAI Codex",
+			detail: loading ? "Checking..." : data?.codex_running ? "Active" : "Idle",
+			status: toStatus(data?.codex_running),
+		},
+	];
 
 	return (
 		<div className="flex h-full min-h-0 flex-col rounded-md border border-border bg-surface-1">
 			<div className="border-b border-border px-4 py-3">
 				<h2 className="text-sm font-semibold text-text-primary">Infrastructure</h2>
-				<p className="mt-0.5 text-xs text-text-secondary">VM service health · refreshes every 15s</p>
+				<p className="mt-0.5 text-xs text-text-secondary">VM service health · refreshes every 10s</p>
 			</div>
 			<div className="flex flex-col gap-2 overflow-y-auto p-3">
 				{services.map((svc) => (
+					<div key={svc.id} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-4 py-3">
+						<div>
+							<p className="text-sm font-medium text-text-primary">{svc.name}</p>
+							<p className="mt-0.5 text-xs text-text-secondary">{svc.detail}</p>
+						</div>
+						<StatusDot status={svc.status} />
+					</div>
+				))}
+				{agentCards.map((svc) => (
 					<div key={svc.id} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-4 py-3">
 						<div>
 							<p className="text-sm font-medium text-text-primary">{svc.name}</p>

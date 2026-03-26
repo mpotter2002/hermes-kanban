@@ -22,6 +22,7 @@ import { cn } from "@/components/ui/cn";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip } from "@/components/ui/tooltip";
+import useInfraStatus from "@/hooks/use-infra-status";
 import { OpenWorkspaceButton } from "@/components/open-workspace-button";
 import {
 	getRuntimeShortcutIconComponent,
@@ -41,6 +42,7 @@ import { isMacPlatform } from "@/utils/platform";
 
 type SettingsSection = "shortcuts";
 type CreateShortcutResult = { ok: boolean; message?: string };
+type HomeSidebarSection = "projects" | "agent" | "infrastructure";
 
 function getWorkspacePathSegments(path: string): string[] {
 	return path
@@ -277,6 +279,94 @@ function TopBarGitStatusSection({
 	return null;
 }
 
+function AgentStatusDot({
+	isActive,
+	isLoading = false,
+	animated = false,
+}: {
+	isActive: boolean;
+	isLoading?: boolean;
+	animated?: boolean;
+}): React.ReactElement {
+	const className = isLoading
+		? "bg-blue-400/70 animate-pulse"
+		: isActive
+			? cn("bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.45)]", animated && "animate-pulse")
+			: "bg-zinc-500";
+	return <span className={cn("h-2 w-2 shrink-0 rounded-full", className)} aria-hidden />;
+}
+
+function AgentStatusPopover({
+	onViewInfra,
+}: {
+	onViewInfra?: () => void;
+}): React.ReactElement {
+	const { data, isLoading } = useInfraStatus();
+	const activeAgentCount = Number(Boolean(data?.claude_running)) + Number(Boolean(data?.codex_running));
+	const hasActiveAgents = activeAgentCount > 0;
+
+	return (
+		<RadixPopover.Root>
+			<RadixPopover.Trigger asChild>
+				<button
+					type="button"
+					className={cn(
+						"mr-2 inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors",
+						hasActiveAgents
+							? "border-green-500/30 bg-green-500/10 text-text-primary hover:bg-green-500/15"
+							: "border-border bg-surface-2 text-text-secondary hover:bg-surface-3 hover:text-text-primary",
+					)}
+					aria-label="Agent status"
+				>
+					<AgentStatusDot isActive={hasActiveAgents} isLoading={isLoading} animated={hasActiveAgents} />
+					<span>{hasActiveAgents ? `${activeAgentCount} Active` : "Agents"}</span>
+				</button>
+			</RadixPopover.Trigger>
+			<RadixPopover.Portal>
+				<RadixPopover.Content
+					side="bottom"
+					align="end"
+					sideOffset={6}
+					className="z-50 w-56 rounded-lg border border-border bg-surface-2 p-2 shadow-xl"
+					style={{ animation: "kb-tooltip-show 100ms ease" }}
+				>
+					<div className="flex flex-col gap-1">
+						<div className="flex items-center justify-between rounded-md px-2 py-1.5">
+							<div className="flex items-center gap-2">
+								<AgentStatusDot isActive={Boolean(data?.claude_running)} isLoading={isLoading} />
+								<span className="text-sm text-text-primary">Claude Code</span>
+							</div>
+							<span className="text-xs text-text-secondary">
+								{isLoading ? "Checking..." : data?.claude_running ? "Active" : "Idle"}
+							</span>
+						</div>
+						<div className="flex items-center justify-between rounded-md px-2 py-1.5">
+							<div className="flex items-center gap-2">
+								<AgentStatusDot isActive={Boolean(data?.codex_running)} isLoading={isLoading} />
+								<span className="text-sm text-text-primary">OpenAI Codex</span>
+							</div>
+							<span className="text-xs text-text-secondary">
+								{isLoading ? "Checking..." : data?.codex_running ? "Active" : "Idle"}
+							</span>
+						</div>
+					</div>
+					{onViewInfra ? (
+						<div className="mt-1 border-t border-border pt-1">
+							<button
+								type="button"
+								onClick={onViewInfra}
+								className="w-full rounded-md px-2 py-1.5 text-left text-xs font-medium text-accent transition-colors hover:bg-surface-3 hover:text-accent-hover"
+							>
+								View Infra
+							</button>
+						</div>
+					) : null}
+				</RadixPopover.Content>
+			</RadixPopover.Portal>
+		</RadixPopover.Root>
+	);
+}
+
 export function TopBar({
 	onBack,
 	onToggleSidebar,
@@ -311,6 +401,7 @@ export function TopBar({
 	onOpenWorkspace,
 	canOpenWorkspace,
 	isOpeningWorkspace,
+	onActiveSectionChange,
 	hideProjectDependentActions = false,
 }: {
 	onBack?: () => void;
@@ -346,6 +437,7 @@ export function TopBar({
 	onOpenWorkspace: () => void;
 	canOpenWorkspace: boolean;
 	isOpeningWorkspace: boolean;
+	onActiveSectionChange?: (section: HomeSidebarSection) => void;
 	hideProjectDependentActions?: boolean;
 }): React.ReactElement {
 	const displayWorkspacePath = workspacePath ? formatPathForDisplay(workspacePath) : null;
@@ -504,6 +596,9 @@ export function TopBar({
 				) : null}
 				</div>
 				<div className="flex shrink-0 items-center pr-0.5 max-md:w-full max-md:justify-end">
+				{!hideProjectDependentActions ? (
+					<AgentStatusPopover onViewInfra={onActiveSectionChange ? () => onActiveSectionChange("infrastructure") : undefined} />
+				) : null}
 				{!hideProjectDependentActions && onRunShortcut ? (
 					selectedShortcut ? (
 						<div className="flex">

@@ -258,6 +258,19 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 				};
 				// Read real system stats
 				const getSystemStats = () => {
+					const getProcessRunning = (processName: "claude" | "codex"): boolean => {
+						try {
+							return (
+								execSync(`pgrep -x ${processName} > /dev/null 2>&1 && echo running || echo stopped`, {
+									timeout: 1000,
+								})
+									.toString()
+									.trim() === "running"
+							);
+						} catch {
+							return false;
+						}
+					};
 					try {
 						const totalMem = totalmem();
 						const freeMem = freemem();
@@ -274,6 +287,8 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 						const cpuCount = cpus().length;
 						const cpuPct = Math.min(100, (load / cpuCount) * 100);
 						return {
+							claude_running: getProcessRunning("claude"),
+							codex_running: getProcessRunning("codex"),
 							cpu: Math.round(cpuPct * 10) / 10,
 							mem_used_gb: Math.round((usedMem / 1024 / 1024 / 1024) * 100) / 100,
 							mem_total_gb: Math.round((totalMem / 1024 / 1024 / 1024) * 100) / 100,
@@ -281,7 +296,15 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 							disk_total_gb: Math.round(diskTotal * 100) / 100,
 						};
 					} catch {
-						return { cpu: 0, mem_used_gb: 0, mem_total_gb: 0, disk_used_gb: 0, disk_total_gb: 0 };
+						return {
+							claude_running: false,
+							codex_running: false,
+							cpu: 0,
+							mem_used_gb: 0,
+							mem_total_gb: 0,
+							disk_used_gb: 0,
+							disk_total_gb: 0,
+						};
 					}
 				};
 				const [gateway, dashboard, sysStats] = await Promise.all([
