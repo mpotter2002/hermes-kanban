@@ -130,7 +130,8 @@ function buildAssistantText(payload: unknown): string {
 }
 
 async function sendHermesMessage(text: string): Promise<string> {
-	const response = await fetch("http://localhost:18789/message", {
+	const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+	const response = await fetch(`${base}/api/hermes/message`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",

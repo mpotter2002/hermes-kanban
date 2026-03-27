@@ -367,6 +367,34 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 				}));
 				return;
 			}
+			// Proxy Hermes messages to avoid CORS issues
+			if (pathname === "/api/hermes/message" && req.method === "POST") {
+				try {
+					const body = await new Promise<string>((resolve, reject) => {
+						let data = "";
+						req.on("data", (chunk) => { data += chunk; });
+						req.on("end", () => resolve(data));
+						req.on("error", reject);
+					});
+					
+					const response = await fetch("http://localhost:18789/message", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body,
+					});
+					
+					const responseBody = await response.text();
+					res.writeHead(response.status, { 
+						"Content-Type": "application/json; charset=utf-8",
+						"Access-Control-Allow-Origin": "*",
+					});
+					res.end(responseBody);
+				} catch {
+					res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+					res.end('{"error":"Hermes gateway unavailable"}');
+				}
+				return;
+			}
 			if (pathname.startsWith("/api/")) {
 				res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
 				res.end('{"error":"Not found"}');
