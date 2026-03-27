@@ -157,18 +157,37 @@ export default function InfraStatusPanel(): ReactElement {
 					</div>
 				))}
 
-				{/* Agent Sessions */}
+				{/* Kimi Usage */}
 				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
 					<div className="mb-2 flex items-center justify-between gap-3">
 						<div>
 							<p className="text-sm font-medium text-text-primary">Kimi Usage</p>
 							<p className="mt-0.5 text-xs text-text-secondary">Kimi K2.5 — Main chat model</p>
 						</div>
-						<StatusDot status="online" />
+						<StatusDot status={data?.kimi_usage?.available ? "online" : loading ? "checking" : "offline"} />
 					</div>
-					<div className="flex flex-col gap-2.5">
-						<p className="text-xs text-text-secondary">Kimi usage tracking coming soon. Currently used as main Hermes chat model for planning and discussion.</p>
-					</div>
+					{loading ? (
+						<p className="text-xs text-text-secondary">Loading...</p>
+					) : data?.kimi_usage?.available ? (
+						<div className="flex flex-col gap-2">
+							<div className="flex justify-between text-xs">
+								<span className="text-text-secondary">Balance</span>
+								<span className="text-text-primary font-medium">
+									${data.kimi_usage.balance_usd?.toFixed(2)} USD
+									<span className="text-text-tertiary ml-1">(¥{data.kimi_usage.balance_cny?.toFixed(0)} CNY)</span>
+								</span>
+							</div>
+							<p className="text-xs text-text-secondary">Monthly subscription active. Balance updates from Moonshot API.</p>
+						</div>
+					) : (
+						<div className="flex flex-col gap-2">
+							<p className="text-xs text-text-secondary">
+								{data?.kimi_usage?.error
+									? `Error: ${data.kimi_usage.error}`
+									: "Set MOONSHOT_API_KEY environment variable to fetch balance."}
+							</p>
+						</div>
+					)}
 				</div>
 
 				<div className="rounded-lg border border-border bg-surface-2 px-4 py-3">

@@ -28,6 +28,7 @@ import { createRuntimeApi } from "../trpc/runtime-api.js";
 import { createWorkspaceApi } from "../trpc/workspace-api.js";
 import { getWebUiDir, normalizeRequestPath, readAsset } from "./assets.js";
 import { readClaudeUsageSnapshot } from "./claude-usage.js";
+import { readKimiUsageSnapshot } from "./kimi-usage.js";
 import type { RuntimeStateHub } from "./runtime-state-hub.js";
 import type { WorkspaceRegistry } from "./workspace-registry.js";
 
@@ -348,11 +349,12 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 			}
 			if (pathname === "/api/infra-status") {
 				res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" });
-				const [gateway, dashboard, sysStats, claudeUsage] = await Promise.all([
+				const [gateway, dashboard, sysStats, claudeUsage, kimiUsage] = await Promise.all([
 					checkUrl("http://localhost:18789/health"),
 					checkUrl("http://localhost:3001"),
 					Promise.resolve(getSystemStats()),
 					readClaudeUsageSnapshot(),
+					readKimiUsageSnapshot(),
 				]);
 				const agentSessions = getAgentSessionCounts();
 				res.end(JSON.stringify({
@@ -361,6 +363,7 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 					claude_sessions: agentSessions["claude"] ?? 0,
 					codex_sessions: agentSessions["codex"] ?? 0,
 					claude_usage: claudeUsage,
+					kimi_usage: kimiUsage,
 				}));
 				return;
 			}

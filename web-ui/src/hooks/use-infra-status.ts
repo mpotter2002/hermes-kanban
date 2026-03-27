@@ -22,6 +22,12 @@ export interface InfraStatusResponse {
 		seven_day_resets_at?: number;
 		available: boolean;
 	};
+	kimi_usage: {
+		balance_cny?: number;
+		balance_usd?: number;
+		available: boolean;
+		error?: string;
+	};
 }
 
 const INFRA_STATUS_POLL_INTERVAL_MS = 10_000;
