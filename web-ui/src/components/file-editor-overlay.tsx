@@ -1,5 +1,5 @@
 import Editor from "@monaco-editor/react";
-import { AlertTriangle, ChevronRight, Save, X } from "lucide-react";
+import { AlertTriangle, ChevronRight, Save, Terminal, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -273,6 +273,15 @@ export default function FileEditorOverlay({
 		}
 	}, [filePath, workspaceId, content, onSaved]);
 
+	const handleEditInTerminal = useCallback(async (): Promise<void> => {
+		if (!filePath) return;
+		
+		// Open terminal in new tab with the file path
+		// This is a simplified version - in production, we'd use the terminal session manager
+		const terminalUrl = `/terminal?file=${encodeURIComponent(filePath)}&workspace=${encodeURIComponent(workspaceId)}`;
+		window.open(terminalUrl, '_blank');
+	}, [filePath, workspaceId]);
+
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const handleEditorMount = useCallback((editor: any): void => {
 		editorRef.current = editor;
@@ -333,6 +342,16 @@ export default function FileEditorOverlay({
 					</div>
 
 					<div className="flex items-center gap-2">
+						<Button
+							variant="default"
+							size="sm"
+							onClick={() => void handleEditInTerminal()}
+							disabled={!filePath}
+							className="gap-1.5"
+						>
+							<Terminal className="h-4 w-4" />
+							Edit in Terminal
+						</Button>
 						<Button
 							variant="primary"
 							size="sm"

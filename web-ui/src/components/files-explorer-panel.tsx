@@ -1,6 +1,6 @@
-import { File, Folder, FolderOpen, Search, X as CloseIcon } from "lucide-react";
+import { ChevronDown, ChevronRight, File, Folder, FolderOpen, Search, X as CloseIcon } from "lucide-react";
 import type { ReactElement } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import FileEditorOverlay from "@/components/file-editor-overlay";
 import { cn } from "@/components/ui/cn";
@@ -13,39 +13,60 @@ function FileTreeItem({
 	depth,
 	selectedPath,
 	onSelectPath,
+	expandedPaths,
+	onToggleExpand,
 }: {
 	node: FileTreeNode;
 	depth: number;
 	selectedPath: string | null;
 	onSelectPath: (path: string) => void;
+	expandedPaths: Set<string>;
+	onToggleExpand: (path: string) => void;
 }): ReactElement {
 	const isDirectory = node.type === "directory";
 	const isSelected = !isDirectory && selectedPath === node.path;
+	const isExpanded = expandedPaths.has(node.path);
 
 	return (
 		<div>
 			<button
 				type="button"
 				onClick={() => {
-					if (!isDirectory) {
+					if (isDirectory) {
+						onToggleExpand(node.path);
+					} else {
 						onSelectPath(node.path);
 					}
 				}}
 				className={cn(
 					"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
-					isDirectory ? "cursor-default text-text-secondary" : "text-text-secondary hover:bg-surface-3 hover:text-text-primary",
+					isDirectory ? "cursor-pointer text-text-secondary hover:bg-surface-3 hover:text-text-primary" : "text-text-secondary hover:bg-surface-3 hover:text-text-primary",
 					isSelected ? "bg-accent text-white hover:bg-accent" : null,
 				)}
 				style={{ paddingLeft: depth * 12 + 8 }}
 			>
 				{isDirectory ? (
-					node.children.length > 0 ? <FolderOpen size={14} className="shrink-0" /> : <Folder size={14} className="shrink-0" />
+					<>
+						{node.children.length > 0 ? (
+							isExpanded ? (
+								<ChevronDown size={14} className="shrink-0" />
+							) : (
+								<ChevronRight size={14} className="shrink-0" />
+							)
+						) : (
+							<span className="w-3.5 shrink-0" />
+						)}
+						{isExpanded ? <FolderOpen size={14} className="shrink-0" /> : <Folder size={14} className="shrink-0" />}
+					</>
 				) : (
-					<File size={14} className="shrink-0" />
+					<>
+						<span className="w-3.5 shrink-0" />
+						<File size={14} className="shrink-0" />
+					</>
 				)}
 				<span className="truncate">{node.name}</span>
 			</button>
-			{node.children.length > 0 ? (
+			{isDirectory && isExpanded && node.children.length > 0 ? (
 				<div>
 					{node.children.map((child) => (
 						<FileTreeItem
@@ -54,6 +75,8 @@ function FileTreeItem({
 							depth={depth + 1}
 							selectedPath={selectedPath}
 							onSelectPath={onSelectPath}
+							expandedPaths={expandedPaths}
+							onToggleExpand={onToggleExpand}
 						/>
 					))}
 				</div>
@@ -72,6 +95,7 @@ export function FilesExplorerPanel({
 	const [selectedPath, setSelectedPath] = useState<string | null>(null);
 	const [editorOpen, setEditorOpen] = useState(false);
 	const [filter, setFilter] = useState("");
+	const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
 
 	useEffect(() => {
 		setFiles(null);
@@ -114,6 +138,28 @@ export function FilesExplorerPanel({
 
 	const tree = useMemo(() => buildFileTree(filteredFiles), [filteredFiles]);
 
+	// Auto-expand root level folders on first load
+	useEffect(() => {
+		if (tree.length > 0 && expandedPaths.size === 0) {
+			const rootFolders = tree
+				.filter((node) => node.type === "directory")
+				.map((node) => node.path);
+			setExpandedPaths(new Set(rootFolders));
+		}
+	}, [tree, expandedPaths.size]);
+
+	const handleToggleExpand = useCallback((path: string) => {
+		setExpandedPaths((prev) => {
+			const next = new Set(prev);
+			if (next.has(path)) {
+				next.delete(path);
+			} else {
+				next.add(path);
+			}
+			return next;
+		});
+	}, []);
+
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-surface-1">
 			<div className="border-b border-border px-4 py-3">
@@ -152,18 +198,20 @@ export function FilesExplorerPanel({
 							No files to display.
 						</div>
 					) : (
-						tree.map((node) => (
-							<FileTreeItem
-								key={node.path}
-								node={node}
-								depth={0}
-								selectedPath={selectedPath}
-								onSelectPath={(path) => {
-									setSelectedPath(path);
-									setEditorOpen(true);
-								}}
-							/>
-						))
+					tree.map((node) => (
+						<FileTreeItem
+							key={node.path}
+							node={node}
+							depth={0}
+							selectedPath={selectedPath}
+							onSelectPath={(path) => {
+								setSelectedPath(path);
+								setEditorOpen(true);
+							}}
+							expandedPaths={expandedPaths}
+							onToggleExpand={handleToggleExpand}
+						/>
+					))
 					)}
 				</div>
 			</div>
