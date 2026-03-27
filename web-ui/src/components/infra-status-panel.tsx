@@ -206,7 +206,7 @@ export default function InfraStatusPanel(): ReactElement {
 					</div>
 					{loading ? (
 						<p className="text-xs text-text-secondary">Loading...</p>
-					) : (
+					) : data?.claude_usage.available ? (
 						<div className="flex flex-col gap-2.5">
 							<ClaudeUsageBar
 								label="5h window"
@@ -226,11 +226,15 @@ export default function InfraStatusPanel(): ReactElement {
 									{formatResetTime(data.claude_usage.seven_day_resets_at)}
 								</p>
 							) : null}
-							{!data?.claude_usage.available ? (
-								<p className="text-xs text-text-secondary">
-									Enable the repo status line helper to capture live Claude Code usage.
-								</p>
-							) : null}
+						</div>
+					) : (
+						<div className="flex flex-col gap-2">
+							<p className="text-xs text-text-secondary">
+								Claude Code usage tracking requires the statusline feature to be enabled.
+							</p>
+							<p className="text-xs text-text-tertiary">
+								Run: <code className="rounded bg-surface-3 px-1 py-0.5">claude config set statusline true</code>
+							</p>
 						</div>
 					)}
 				</div>
