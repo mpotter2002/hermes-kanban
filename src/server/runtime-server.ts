@@ -367,7 +367,7 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 				}));
 				return;
 			}
-			// Proxy Hermes messages to avoid CORS issues
+			// Proxy Hermes messages to webapi (port 8642) to avoid CORS issues
 			if (pathname === "/api/hermes/message" && req.method === "POST") {
 				try {
 					const body = await new Promise<string>((resolve, reject) => {
@@ -377,7 +377,7 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 						req.on("error", reject);
 					});
 					
-					const response = await fetch("http://localhost:18789/message", {
+					const response = await fetch("http://localhost:8642/api/message", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body,
@@ -389,9 +389,9 @@ export async function createRuntimeServer(deps: CreateRuntimeServerDependencies)
 						"Access-Control-Allow-Origin": "*",
 					});
 					res.end(responseBody);
-				} catch {
+				} catch (error) {
 					res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
-					res.end('{"error":"Hermes gateway unavailable"}');
+					res.end(JSON.stringify({error: "Hermes webapi unavailable", details: String(error)}));
 				}
 				return;
 			}
