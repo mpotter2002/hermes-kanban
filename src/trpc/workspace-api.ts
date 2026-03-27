@@ -346,6 +346,31 @@ export function createWorkspaceApi(deps: CreateWorkspaceApiDependencies): Runtim
 		loadFileContent: async (workspaceScope, input) => {
 			return await loadWorkspaceFileContent(workspaceScope.workspacePath, input.path);
 		},
+		saveFileContent: async (workspaceScope, input) => {
+			try {
+				const fs = await import("node:fs/promises");
+				const path = await import("node:path");
+				const fullPath = path.join(workspaceScope.workspacePath, input.path);
+				
+				// Ensure the directory exists
+				const dir = path.dirname(fullPath);
+				await fs.mkdir(dir, { recursive: true });
+				
+				// Write the file
+				await fs.writeFile(fullPath, input.content, "utf8");
+				
+				return {
+					success: true,
+					path: input.path,
+				};
+			} catch (error) {
+				return {
+					success: false,
+					path: input.path,
+					error: error instanceof Error ? error.message : "Failed to save file",
+				};
+			}
+		},
 		loadState: async (workspaceScope) => {
 			return await deps.buildWorkspaceStateSnapshot(workspaceScope.workspaceId, workspaceScope.workspacePath);
 		},

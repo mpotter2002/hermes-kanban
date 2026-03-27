@@ -79,6 +79,19 @@ export const runtimeWorkspaceFileContentResponseSchema = z.object({
 });
 export type RuntimeWorkspaceFileContentResponse = z.infer<typeof runtimeWorkspaceFileContentResponseSchema>;
 
+export const runtimeWorkspaceSaveFileContentRequestSchema = z.object({
+	path: z.string(),
+	content: z.string(),
+});
+export type RuntimeWorkspaceSaveFileContentRequest = z.infer<typeof runtimeWorkspaceSaveFileContentRequestSchema>;
+
+export const runtimeWorkspaceSaveFileContentResponseSchema = z.object({
+	success: z.boolean(),
+	path: z.string(),
+	error: z.string().optional(),
+});
+export type RuntimeWorkspaceSaveFileContentResponse = z.infer<typeof runtimeWorkspaceSaveFileContentResponseSchema>;
+
 export const runtimeSlashCommandSchema = z.object({
 	name: z.string(),
 	instructions: z.string(),
